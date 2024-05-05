@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using ScoreOracleCSharp.Dtos.Team;
+using ScoreOracleCSharp.Mappers;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -16,6 +18,7 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
+        // Get All Teams
         [HttpGet]
         public IActionResult GetAll() 
         {
@@ -24,6 +27,7 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(teams);
         }
 
+        // Get Team By ID
         [HttpGet("{id}")]
         public IActionResult GetById([FromRoute] int id)
         {
@@ -35,6 +39,36 @@ namespace ScoreOracleCSharp.Controllers
             }
 
             return Ok(team);
+        }
+
+        // Create Team
+        [HttpPost]
+        public IActionResult Create([FromBody] CreateTeamDto teamDto)
+        {
+            if(!TeamExists(teamDto.City, teamDto.Name, teamDto.SportId))
+            {
+                return BadRequest("Team in that city already exists with that name");
+            }
+            
+            if(!SportExists(teamDto.SportId))
+            {
+                return BadRequest("Sport with that ID does not exist");
+            }
+
+            var newTeam = TeamMapper.ToTeamFromCreateDTO(teamDto);
+            _context.Teams.Add(newTeam);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(GetById), new { id = newTeam.Id }, TeamMapper.ToTeamDto(newTeam));
+        }
+
+        public bool TeamExists(string teamCity, string teamName, int sportId)
+        {
+            return _context.Teams.Any(t => t.Name == teamName && t.City == teamCity && t.SportId == sportId);
+        }
+
+        public bool SportExists(int sportId)
+        {
+            return _context.Sports.Any(s => s.Id == sportId);
         }
     }
 }

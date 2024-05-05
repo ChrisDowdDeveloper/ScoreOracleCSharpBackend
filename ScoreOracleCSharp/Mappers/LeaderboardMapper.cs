@@ -27,5 +27,15 @@ namespace ScoreOracleCSharp.Mappers
                 }).ToList()
             };
         }
+
+        public static Leaderboard ToLeaderboardFromCreateDTO(CreateLeaderboardDto leaderboardDto)
+        {
+            return new Leaderboard
+            {
+                Type = leaderboardDto.Type,
+                Name = leaderboardDto.Name,
+                SportId = leaderboardDto.SportId
+            };
+        }
     }
 }

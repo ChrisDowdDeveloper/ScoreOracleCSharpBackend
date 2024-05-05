@@ -21,5 +21,14 @@ namespace ScoreOracleCSharp.Mappers
                 JoinedAt = groupMemberModel.JoinedAt
             };
         }
+        public static GroupMember ToGroupMemberFromCreateDTO(CreateGroupMemberDto memberDto)
+        {
+            return new GroupMember
+            {
+                GroupId = memberDto.GroupId,
+                UserId = memberDto.UserId,
+                JoinedAt = DateOnly.FromDateTime(DateTime.UtcNow)
+            };
+        }
     }
 }

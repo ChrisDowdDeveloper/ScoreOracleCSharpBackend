@@ -31,5 +31,19 @@ namespace ScoreOracleCSharp.Mappers
                 PredictionCount = gameModel.GamePrediction.Count
             };
         }
+
+        public static Game ToGameFromCreateDTO(CreateGameDto gameDto)
+        {
+            return new Game
+            {
+                HomeTeamId = gameDto.HomeTeamId,
+                AwayTeamId = gameDto.AwayTeamId,
+                GameDate = gameDto.GameDate,
+                SportId = gameDto.SportId,
+                HomeTeamScore = 0,
+                AwayTeamScore = 0,
+                GameStatus = GameStatus.SCHEDULED
+            };
+        }
     }
 }

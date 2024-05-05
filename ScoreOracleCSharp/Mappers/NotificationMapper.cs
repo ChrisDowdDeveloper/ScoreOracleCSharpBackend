@@ -20,5 +20,17 @@ namespace ScoreOracleCSharp.Mappers
                 IsRead = notificationModel.IsRead
             };
         }
+
+        public static Notification ToNotificationFromCreateDTO(CreateNotificationDto notificationDto)
+        {
+            return new Notification
+            {
+                UserId = notificationDto.UserId,
+                Type = notificationDto.Type,
+                Content = notificationDto.Content,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+        }
     }
 }

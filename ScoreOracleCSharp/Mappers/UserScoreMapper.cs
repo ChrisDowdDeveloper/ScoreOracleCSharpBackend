@@ -22,5 +22,16 @@ namespace ScoreOracleCSharp.Mappers
                 UpdatedLast = userScoreModel.UpdatedLast
             };
         }
+
+        public static UserScore ToUserScoreFromCreateDTO(CreateUserScoreDto userScoreDto)
+        {
+            return new UserScore
+            {
+                UserId = userScoreDto.UserId,
+                LeaderboardId = userScoreDto.LeaderboardId,
+                Score = userScoreDto.Score,
+                UpdatedLast = DateTime.Now
+            };
+        }
     }
 }

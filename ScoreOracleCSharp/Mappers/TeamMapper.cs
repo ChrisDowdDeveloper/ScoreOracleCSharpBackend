@@ -21,5 +21,16 @@ namespace ScoreOracleCSharp.Mappers
                 LogoURL = teamModel.LogoURL
             };
         }
+
+        public static Team ToTeamFromCreateDTO(CreateTeamDto teamDto)
+        {
+            return new Team
+            {
+                City = teamDto.City,
+                Name = teamDto.Name,
+                SportId = teamDto.SportId,
+                LogoURL = teamDto.LogoURL
+            };
+        }
     }
 }

@@ -23,5 +23,18 @@ namespace ScoreOracleCSharp.Mappers
                 PredictedAwayTeamScore = predictionModel.PredictedAwayTeamScore  
             };
         }
+
+        public static Prediction ToPredictionFromCreateDTO(CreatePredictionDto predictionDto)
+        {
+            return new Prediction
+            {
+                UserId = predictionDto.UserId,
+                GameId = predictionDto.GameId,
+                PredictedTeamId = predictionDto.PredictedTeamId,
+                PredictedAwayTeamScore = predictionDto.PredictedAwayTeamScore,
+                PredictedHomeTeamScore = predictionDto.PredictedHomeTeamScore,
+                PredictionDate = DateOnly.FromDateTime(DateTime.UtcNow)
+            };
+        }
     }
 }

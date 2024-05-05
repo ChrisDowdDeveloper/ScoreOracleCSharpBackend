@@ -20,5 +20,15 @@ namespace ScoreOracleCSharp.Mappers
                 MemberCount = groupModel.Members.Count
             };
         }
+
+        public static Group ToGroupFromCreateDTO(CreateGroupDto groupDto)
+        {
+            return new Group
+            {
+                Name = groupDto.Name,
+                UserId = groupDto.UserId,
+                CreatedOn = DateTime.UtcNow
+            };
+        }
     }
 }

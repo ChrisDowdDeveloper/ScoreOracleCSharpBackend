@@ -22,5 +22,16 @@ namespace ScoreOracleCSharp.Mappers
                 IsInjured = playerModel.PlayerInjury.Any()
             };
         }
+
+        public static Player ToPlayerFromCreateDTO(CreatePlayerDto playerDto)
+        {
+            return new Player
+            {
+                TeamId = playerDto.TeamId,
+                FirstName = playerDto.FirstName,
+                LastName = playerDto.LastName,
+                Position = playerDto.Position
+            };
+        }
     }
 }

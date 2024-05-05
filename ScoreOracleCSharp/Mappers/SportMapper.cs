@@ -20,5 +20,16 @@ namespace ScoreOracleCSharp.Mappers
                 Abbreviation = sportModel.Abbreviation
             };
         }
+
+        public static Sport ToSportFromCreateDTO(CreateSportDto sportDto)
+        {
+            return new Sport
+            {
+                Name = sportDto.Name,
+                League = sportDto.League,
+                LogoURL = sportDto.LogoURL,
+                Abbreviation = sportDto.Abbreviation
+            };
+        }
     }
 }

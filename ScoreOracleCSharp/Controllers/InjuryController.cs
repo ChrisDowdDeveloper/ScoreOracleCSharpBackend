@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using ScoreOracleCSharp.Dtos.Injury;
+using ScoreOracleCSharp.Mappers;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -16,6 +18,7 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
+        // Get All Injuries
         [HttpGet]
         public IActionResult GetAll() 
         {
@@ -24,6 +27,7 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(injuries);
         }
 
+        // Get Injury By ID
         [HttpGet("{id}")]
         public IActionResult GetById([FromRoute] int id)
         {
@@ -35,6 +39,45 @@ namespace ScoreOracleCSharp.Controllers
             }
 
             return Ok(injury);
+        }
+
+        // Create Injury 
+        public IActionResult Create([FromBody] CreateInjuryDto injuryDto)
+        {
+            if(!PlayerExists(injuryDto.PlayerId))
+            {
+                return BadRequest("Player does not exist with that ID.");
+            }
+
+            if(!TeamExists(injuryDto.TeamId))
+            {
+                return BadRequest("Team does not exist with that ID.");
+            }
+
+            if(!PlayerOnTeam(injuryDto.PlayerId, injuryDto.TeamId))
+            {
+                return BadRequest("Player is not on that team");
+            }
+
+            var newInjury = InjuryMapper.ToInjuryFromCreateDTO(injuryDto);
+            _context.Injuries.Add(newInjury);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(GetById), new { id = newInjury.Id }, InjuryMapper.ToInjuryDto(newInjury));
+        }
+
+        private bool PlayerExists(int playerId)
+        {
+            return _context.Players.Any(p => p.Id == playerId);
+        }
+
+        private bool TeamExists(int teamId)
+        {
+            return _context.Teams.Any(t => t.Id == teamId);
+        }
+
+        private bool PlayerOnTeam(int playerId, int teamId)
+        {
+            return _context.Players.Any(p => p.Id == playerId && p.TeamId == teamId);
         }
     }
 }
