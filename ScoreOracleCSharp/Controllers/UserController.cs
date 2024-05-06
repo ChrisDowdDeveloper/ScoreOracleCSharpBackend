@@ -60,5 +60,44 @@ namespace ScoreOracleCSharp.Controllers
             _context.SaveChanges();
             return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, UserMapper.ToUserDto(newUser));
         }
+
+        // Update User
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserDto userDto)
+        {
+            /*if (id != GetAuthenticatedUserId())
+            {
+                return Unauthorized("You are not authorized to update this user.");
+            }
+            */
+
+            var user = await _context.Users.FindAsync(id);
+            if(user == null)
+            {
+                return NotFound();
+            }
+
+            if (_context.Users.Any(u => (u.Email == userDto.Email || u.Username == userDto.Username) && u.Id != id))
+            {
+                return BadRequest("Username or email already exists.");
+            }
+
+            user.Username = userDto.Username;
+            user.Email = userDto.Email;
+            user.FirstName = userDto.FirstName;
+            user.LastName = userDto.LastName;
+            user.DateOfBirth = userDto.DateOfBirth;
+            user.ProfilePictureUrl = userDto.ProfilePictureUrl;
+
+            _context.SaveChanges();
+
+            return Ok(new { message = "User updated successfully." });
+        }
+
+        private int GetAuthenticatedUserId()
+        {
+            return 0;
+        }
     }
 }

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Leaderboard;
 using ScoreOracleCSharp.Mappers;
+using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -42,22 +44,60 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         // Create Leaderboard
-        public IActionResult Create([FromBody] CreateLeaderboardDto leaderboardDto)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateLeaderboardDto leaderboardDto)
         {
-            if(!SportExists(leaderboardDto.SportId))
+            if(!await SportExists(leaderboardDto.SportId))
             {
                 return BadRequest("Sport does not exist with that ID.");
             }
 
             var newLeaderboard = LeaderboardMapper.ToLeaderboardFromCreateDTO(leaderboardDto);
             _context.Leaderboards.Add(newLeaderboard);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newLeaderboard.Id }, LeaderboardMapper.ToLeaderboardDto(newLeaderboard));
         }
 
-        private bool SportExists(int sportId)
+        // Update Leaderboard
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateLeaderboard([FromRoute] int id, [FromBody] UpdateLeaderboardDto updateDto)
         {
-            return _context.Sports.Any(s => s.Id == sportId);
+            var leaderboard = await _context.Leaderboards.FindAsync(id);
+            if (leaderboard == null)
+            {
+                return NotFound("Leaderboard not found.");
+            }
+
+            if (updateDto.Name != null)
+            {
+                leaderboard.Name = updateDto.Name;
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Type) && Enum.TryParse<LeaderboardType>(updateDto.Type, true, out var parsedType))
+            {
+                leaderboard.Type = parsedType;
+            }
+            else if (!string.IsNullOrWhiteSpace(updateDto.Type))
+            {
+                return BadRequest("Invalid leaderboard type specified.");
+            }
+
+            if (updateDto.SportId.HasValue && !await SportExists(updateDto.SportId.Value))
+            {
+                return BadRequest("Specified sport does not exist.");
+            }
+            else if (updateDto.SportId.HasValue)
+            {
+                leaderboard.SportId = updateDto.SportId.Value;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(LeaderboardMapper.ToLeaderboardDto(leaderboard));
+        }
+
+        private async Task<bool> SportExists(int sportId)
+        {
+            return await _context.Sports.AnyAsync(s => s.Id == sportId);
         }
     }
 }

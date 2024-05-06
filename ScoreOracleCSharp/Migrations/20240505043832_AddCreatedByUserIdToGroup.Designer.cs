@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScoreOracleCSharp;
 
@@ -11,9 +12,11 @@ using ScoreOracleCSharp;
 namespace ScoreOracleCSharp.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240505043832_AddCreatedByUserIdToGroup")]
+    partial class AddCreatedByUserIdToGroup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,9 +79,6 @@ namespace ScoreOracleCSharp.Migrations
 
                     b.Property<int>("HomeTeamScore")
                         .HasColumnType("int");
-
-                    b.Property<bool>("ScoresUpdated")
-                        .HasColumnType("bit");
 
                     b.Property<int?>("SportId")
                         .HasColumnType("int");

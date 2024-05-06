@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.UserScore;
 using ScoreOracleCSharp.Mappers;
 
@@ -43,19 +44,19 @@ namespace ScoreOracleCSharp.Controllers
 
         // Create User Score
         [HttpPost]
-        public IActionResult Create([FromBody] CreateUserScoreDto userScoreDto)
+        public async Task<IActionResult> Create([FromBody] CreateUserScoreDto userScoreDto)
         {
             if (userScoreDto.UserId != GetAuthenticatedUserId())
             {
                 return Unauthorized("You are not authorized to make predictions for other users.");
             }
             
-            if(!UserExists(userScoreDto.UserId))
+            if(!await UserExists(userScoreDto.UserId))
             {
                 return BadRequest("User with that ID does not exists");
             }
 
-            if(!LeaderboardExists(userScoreDto.LeaderboardId))
+            if(!await LeaderboardExists(userScoreDto.LeaderboardId))
             {
                 return BadRequest("Leaderboard does not exist with that ID");
             }
@@ -66,13 +67,58 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newUserScore.Id }, UserScoreMapper.ToUserScoreDto(newUserScore));
         }
 
-        public bool UserExists(int userId) 
+        // Update a User Score
+        [HttpPatch]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserScoreDto userScoreDto)
         {
-            return _context.Users.Any(u => u.Id == userId);
+            var userScore = await _context.UserScores.FindAsync(id);
+            if(userScore == null)
+            {
+                return NotFound("User Score cannot be found");
+            }
+
+            if (userScoreDto.UserId != GetAuthenticatedUserId())
+            {
+                return Unauthorized("You are not authorized to make predictions for other users.");
+            }
+
+            if(userScoreDto.UserId.HasValue && !await UserExists(userScoreDto.UserId.Value))
+            {
+                return BadRequest("User does not exist");
+            }
+            else if(userScore.UserId.HasValue)
+            {
+                userScore.UserId = userScoreDto.UserId;
+            }
+
+            if(userScoreDto.LeaderboardId.HasValue && !await LeaderboardExists(userScoreDto.LeaderboardId.Value))
+            {
+                return BadRequest("Leaderboard does not exist.");
+            }
+            else if(userScoreDto.LeaderboardId.HasValue)
+            {
+                userScore.LeaderboardId = userScoreDto.LeaderboardId;
+            }
+
+            if (userScoreDto.Score != userScore.Score)
+            {
+                userScore.Score = userScoreDto.Score;
+            }
+            userScore.UpdatedLast = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(UserScoreMapper.ToUserScoreDto(userScore));
+
         }
-        public bool LeaderboardExists(int leaderboardId)
+
+        private async Task<bool> UserExists(int userId) 
         {
-            return _context.Leaderboards.Any(l => l.Id == leaderboardId);
+            return await _context.Users.AnyAsync(u => u.Id == userId);
+        }
+        private async Task<bool> LeaderboardExists(int leaderboardId)
+        {
+            return await _context.Leaderboards.AnyAsync(l => l.Id == leaderboardId);
         }
         private int GetAuthenticatedUserId()
         {

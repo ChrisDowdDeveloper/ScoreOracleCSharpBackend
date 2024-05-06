@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Team;
 using ScoreOracleCSharp.Mappers;
 
@@ -43,14 +44,14 @@ namespace ScoreOracleCSharp.Controllers
 
         // Create Team
         [HttpPost]
-        public IActionResult Create([FromBody] CreateTeamDto teamDto)
+        public async Task<IActionResult> Create([FromBody] CreateTeamDto teamDto)
         {
-            if(!TeamExists(teamDto.City, teamDto.Name, teamDto.SportId))
+            if(!await TeamExists(teamDto.City, teamDto.Name, teamDto.SportId))
             {
                 return BadRequest("Team in that city already exists with that name");
             }
             
-            if(!SportExists(teamDto.SportId))
+            if(!await SportExists(teamDto.SportId))
             {
                 return BadRequest("Sport with that ID does not exist");
             }
@@ -61,14 +62,53 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newTeam.Id }, TeamMapper.ToTeamDto(newTeam));
         }
 
-        public bool TeamExists(string teamCity, string teamName, int sportId)
+        // Update Team
+        [HttpPatch]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateTeamDto teamDto)
         {
-            return _context.Teams.Any(t => t.Name == teamName && t.City == teamCity && t.SportId == sportId);
+            var team = await _context.Teams.FindAsync(id);
+            if(team == null)
+            {
+                return NotFound("Team cannot be found.");
+            }
+
+            if(string.IsNullOrWhiteSpace(teamDto.City))
+            {
+                return BadRequest("Team must have a city.");
+            }
+
+            if(string.IsNullOrWhiteSpace(teamDto.Name))
+            {
+                return BadRequest("Team must have a name");
+            }
+
+            if(teamDto.SportId.HasValue && !await SportExists(teamDto.SportId.Value))
+            {
+                return BadRequest("Sport is not valid.");
+            }
+            else if (teamDto.SportId.HasValue)
+            {   
+                team.SportId = teamDto.SportId;
+            }
+
+            team.City = teamDto.City;
+            team.Name = teamDto.Name;
+            team.LogoURL = teamDto.LogoURL;
+
+            await _context.SaveChangesAsync();
+            return Ok(TeamMapper.ToTeamDto(team));
+
         }
 
-        public bool SportExists(int sportId)
+        private async Task<bool> TeamExists(string teamCity, string teamName, int sportId)
         {
-            return _context.Sports.Any(s => s.Id == sportId);
+            return await _context.Teams.AnyAsync(t => t.Name == teamName && t.City == teamCity && t.SportId == sportId);
+        }
+
+        private async Task<bool> SportExists(int sportId)
+        {
+            return await _context.Sports.AnyAsync(s => s.Id == sportId);
         }
     }
 }

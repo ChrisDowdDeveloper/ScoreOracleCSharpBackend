@@ -41,15 +41,16 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(group);
         }
 
+        // Create Group
         [HttpPost]
         public IActionResult Create([FromBody] CreateGroupDto groupDto)
         {
-            if (!UserExists(groupDto.UserId))
+            if (!UserExists(groupDto.CreatedByUserId))
             {
                 return BadRequest("Invalid user ID.");
             }
 
-            if (groupDto.UserId != GetAuthenticatedUserId())
+            if (groupDto.CreatedByUserId != GetAuthenticatedUserId())
             {
                 return Unauthorized("You are not authorized to create a group for another user.");
             }
@@ -60,6 +61,35 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newGroup.Id }, GroupMapper.ToGroupDto(newGroup));
         }
 
+        // Update Group
+        [HttpPatch]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateGroupDto groupDto)
+        {
+            var group = await _context.Groups.FindAsync(id);
+            if(group == null)
+            {
+                return NotFound();
+            }
+
+            var userId = GetAuthenticatedUserId();
+            if (group.CreatedByUserId != userId)
+            {
+                return Unauthorized("You do not have permission to update this group.");
+            }
+
+            if (string.IsNullOrWhiteSpace(groupDto.Name) || groupDto.Name.Length < 3)
+            {
+                return BadRequest("Group name must have at least 3 characters and cannot be empty.");
+            }
+
+            group.Name = groupDto.Name.Trim(); 
+
+            group.Name = groupDto.Name;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Group updated successfully", groupId = group.Id });
+        }
+        
         private bool UserExists(int userId)
         {
             return _context.Users.Any(u => u.Id == userId);
@@ -69,5 +99,6 @@ namespace ScoreOracleCSharp.Controllers
         {
             return 0;
         }
+        
     }
 }

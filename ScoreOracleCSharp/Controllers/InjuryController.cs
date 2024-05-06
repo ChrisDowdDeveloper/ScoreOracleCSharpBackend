@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Injury;
 using ScoreOracleCSharp.Mappers;
 
@@ -42,6 +43,7 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         // Create Injury 
+        [HttpPost]
         public IActionResult Create([FromBody] CreateInjuryDto injuryDto)
         {
             if(!PlayerExists(injuryDto.PlayerId))
@@ -65,6 +67,42 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newInjury.Id }, InjuryMapper.ToInjuryDto(newInjury));
         }
 
+        // Update Injury
+        [HttpPatch]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateInjuryDto injuryDto)
+        {
+            var injury = await _context.Injuries.FindAsync(id);
+            if (injury == null)
+            {
+                return NotFound("Injury not found.");
+            }
+
+            if (injuryDto.PlayerId.HasValue && !await _context.Players.AnyAsync(p => p.Id == injuryDto.PlayerId.Value))
+            {
+                return BadRequest("Player does not exist.");
+            }
+
+            if (injuryDto.TeamId.HasValue && !await _context.Teams.AnyAsync(t => t.Id == injuryDto.TeamId.Value))
+            {
+                return BadRequest("The team does not exist.");
+            }
+
+            if (injuryDto.PlayerId.HasValue)
+            {
+                injury.PlayerId = injuryDto.PlayerId.Value;
+            }
+
+            if (injuryDto.TeamId.HasValue)
+            {
+                injury.TeamId = injuryDto.TeamId.Value;
+            }
+
+            injury.Description = injuryDto.Description;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Injury has been updated successfully." });
+        }
         private bool PlayerExists(int playerId)
         {
             return _context.Players.Any(p => p.Id == playerId);

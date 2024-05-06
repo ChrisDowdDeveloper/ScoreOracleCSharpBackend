@@ -15,7 +15,7 @@ namespace ScoreOracleCSharp.Mappers
             {
                 Id = groupModel.Id,
                 Name = groupModel.Name,
-                CreatedByUserId = groupModel.UserId ?? 0,
+                CreatedByUserId = groupModel.CreatedByUserId ?? 0,
                 CreatedOn = groupModel.CreatedOn,
                 MemberCount = groupModel.Members.Count
             };
@@ -26,7 +26,7 @@ namespace ScoreOracleCSharp.Mappers
             return new Group
             {
                 Name = groupDto.Name,
-                UserId = groupDto.UserId,
+                CreatedByUserId = groupDto.CreatedByUserId,
                 CreatedOn = DateTime.UtcNow
             };
         }

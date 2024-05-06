@@ -43,6 +43,8 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(friendship);
         }
 
+        // Create User
+        [HttpPost]
         public IActionResult Create([FromBody] CreateFriendshipDto friendshipDto)
         {
 
@@ -57,5 +59,46 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newFriendship.Id }, FriendshipMapper.ToFriendshipDto(newFriendship));
 
         }
+
+        // Update User
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateFriendshipDto friendshipDto)
+        {
+            var friendship = await _context.Friendships.FindAsync(id);
+            if(friendship == null)
+            {
+                return NotFound();
+            }
+
+            if (!UserExists(friendshipDto.RequesterId) || !UserExists(friendshipDto.ReceiverId))
+            {
+                return BadRequest("Invalid requester or receiver ID.");
+            }
+
+            if (!IsAuthorizedToUpdateFriendship(id))
+            {
+                return Unauthorized("Not authorized to update this friendship.");
+            }
+
+            friendship.RequesterId = friendshipDto.RequesterId;
+            friendship.ReceiverId = friendshipDto.ReceiverId;
+            friendship.Status = friendshipDto.Status;
+            
+
+            _context.SaveChanges();
+            return Ok(new { message = "Friendship updated successfully" });
+        }
+
+        private bool UserExists(int userId)
+        {
+            return _context.Users.Any(u => u.Id == userId);
+        }
+
+        private bool IsAuthorizedToUpdateFriendship(int friendshipId)
+        {
+            return true;
+        }
+
     }
 }

@@ -26,6 +26,7 @@
         public int HomeTeamScore { get; set; }
         public int AwayTeamScore { get; set; }
         public GameStatus GameStatus { get; set; } = GameStatus.SCHEDULED;
+        public bool ScoresUpdated { get; set; } = false;
 
         //Relations
         public List<Prediction> GamePrediction { get; set; } = new List<Prediction>();

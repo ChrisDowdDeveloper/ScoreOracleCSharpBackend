@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 
 namespace ScoreOracleCSharp.Dtos.Group
 {
-    public class CreateGroupDto
+    public class UpdateGroupDto
     {
         public string Name { get; set; } = string.Empty;
-        public int CreatedByUserId { get; set; }
     }
 }

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Player;
 using ScoreOracleCSharp.Mappers;
+using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -18,7 +20,10 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Players
+        /// <summary>
+        /// Retrieves all players in the database.
+        /// </summary>
+        /// <returns>A list of players</returns>
         [HttpGet]
         public IActionResult GetAll() 
         {
@@ -27,7 +32,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(players);
         }
 
-        // Get Player By ID
+        /// <summary>
+        /// Retrieves a players in the database.
+        /// </summary>
+        /// <returns>A specific player</returns>
         [HttpGet("{id}")]
         public IActionResult GetById([FromRoute] int id)
         {
@@ -41,8 +49,12 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(player);
         }
 
-        // Create Player
-        public IActionResult Create([FromBody] CreatePlayerDto playerDto)
+        /// <summary>
+        /// Creates a player in the database
+        /// </summary>
+        /// <returns>The created player</returns>
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreatePlayerDto playerDto)
         {
 
             if (string.IsNullOrWhiteSpace(playerDto.FirstName) || string.IsNullOrWhiteSpace(playerDto.LastName))
@@ -50,20 +62,64 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("Player name cannot be empty.");
             }
 
-            if(!TeamExists(playerDto.TeamId))
+            if(!await TeamExists(playerDto.TeamId))
             {
                 return BadRequest("Team does not exist with that ID");
             }
 
             var newPlayer = PlayerMapper.ToPlayerFromCreateDTO(playerDto);
             _context.Players.Add(newPlayer);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newPlayer.Id }, PlayerMapper.ToPlayerDto(newPlayer));
         }
 
-        public bool TeamExists(int teamId)
+        /// <summary>
+        /// Updates a player in the database
+        /// </summary>
+        /// <returns>The updated player</returns>
+        [HttpPatch]
+        [Route("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePlayerDto playerDto)
         {
-            return _context.Teams.Any(t => t.Id == teamId);
+            var player = await _context.Players.Include(p => p.PlayerInjury).FirstOrDefaultAsync(p => p.Id == id);
+            if(player == null)
+            {
+                return NotFound();
+            }
+
+            if(playerDto.TeamId.HasValue && !await TeamExists(playerDto.TeamId.Value))
+            {
+                return BadRequest("Team does not exist");
+            } 
+            else if(playerDto.TeamId.HasValue)
+            {
+                player.TeamId = playerDto.TeamId.Value;
+            }
+
+            player.FirstName = playerDto.FirstName;
+            player.LastName = playerDto.LastName;
+            player.Position = playerDto.Position;
+
+            if(playerDto.IsInjured && !player.PlayerInjury.Any())
+            {
+                player.PlayerInjury.Add(new Injury { 
+                    PlayerId = player.Id,
+                    Description = "This player is injured, please update accordingly",
+                    TeamId = player.TeamId
+                });
+            }
+            else if (!playerDto.IsInjured)
+            {
+                player.PlayerInjury.Clear();
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(PlayerMapper.ToPlayerDto(player));
+        }
+
+        private async Task<bool> TeamExists(int teamId)
+        {
+            return await _context.Teams.AnyAsync(t => t.Id == teamId);
         }
     }
 }
