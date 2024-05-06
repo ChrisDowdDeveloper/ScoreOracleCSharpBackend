@@ -20,20 +20,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Leaderboards
+        /// <summary>
+        /// Retrieves all leaderboards in the database.
+        /// </summary>
+        /// <returns>A list of leaderboards</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var leaderboards = _context.Leaderboards.ToList();
+            var leaderboards = await _context.Leaderboards.ToListAsync();
         
             return Ok(leaderboards);
         }
 
-        // Get Leaderboard By ID
+        /// <summary>
+        /// Retrieves a leaderboard in the database.
+        /// </summary>
+        /// <returns>A specific leaderboard</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var leaderboard = _context.Leaderboards.Find(id);
+            var leaderboard = await _context.Leaderboards.FindAsync(id);
 
             if(leaderboard == null)
             {
@@ -43,7 +49,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(leaderboard);
         }
 
-        // Create Leaderboard
+        /// <summary>
+        /// Creates a leaderboard in the database
+        /// </summary>
+        /// <returns>The created leaderboard</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLeaderboardDto leaderboardDto)
         {
@@ -58,7 +67,10 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newLeaderboard.Id }, LeaderboardMapper.ToLeaderboardDto(newLeaderboard));
         }
 
-        // Update Leaderboard
+        /// <summary>
+        /// Updates a leaderboard in the database
+        /// </summary>
+        /// <returns>The updated leaderboard</returns>
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateLeaderboard([FromRoute] int id, [FromBody] UpdateLeaderboardDto updateDto)
         {
@@ -93,6 +105,25 @@ namespace ScoreOracleCSharp.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(LeaderboardMapper.ToLeaderboardDto(leaderboard));
+        }
+
+        /// <summary>
+        /// Deletes a leaderboard in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var leaderboard = await _context.Leaderboards.FirstOrDefaultAsync(l => l.Id == id);
+            if(leaderboard == null)
+            {
+                return NotFound("Leaderboard not found and could not be deleted");
+            }
+
+            _context.Leaderboards.Remove(leaderboard);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> SportExists(int sportId)

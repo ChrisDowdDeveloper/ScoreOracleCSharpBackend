@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.User;
 using ScoreOracleCSharp.Mappers;
 
@@ -17,22 +18,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Users
-
+        /// <summary>
+        /// Retrieves all users in the database.
+        /// </summary>
+        /// <returns>A list of userse</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var users = _context.Users.ToList().Select(u => UserMapper.ToUserDto(u));
+            var users = await _context.Users.ToListAsync();
         
             return Ok(users);
         }
 
-        // Get User By ID
-
+        /// <summary>
+        /// Retrieves a user in the database.
+        /// </summary>
+        /// <returns>A specific user</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var user = _context.Users.Find(id);
+            var user = await _context.Users.FindAsync(id);
 
             if(user == null)
             {
@@ -42,27 +47,33 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(user);
         }
 
-        // Create User
+        /// <summary>
+        /// Creates a user in the database
+        /// </summary>
+        /// <returns>The created user</returns>
         [HttpPost]
-        public IActionResult Register([FromBody] CreateUserRequestDto createUserDto)
+        public async Task<IActionResult> Register([FromBody] CreateUserRequestDto createUserDto)
         {
-            if (_context.Users.Any(u => u.Email == createUserDto.Email))
+            if (await _context.Users.AnyAsync(u => u.Email == createUserDto.Email))
             {
                 return BadRequest("Email already in use.");
             }
-            if (_context.Users.Any(u => u.Username == createUserDto.Username))
+            if (await _context.Users.AnyAsync(u => u.Username == createUserDto.Username))
             {
                 return BadRequest("Username already in use.");
             }
 
             var newUser = UserMapper.ToUserFromCreateDTO(createUserDto);
             _context.Users.Add(newUser);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, UserMapper.ToUserDto(newUser));
         }
 
-        // Update User
-        [HttpPut]
+        /// <summary>
+        /// Updates a user in the database
+        /// </summary>
+        /// <returns>The updated user</returns>
+        [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserDto userDto)
         {
@@ -78,7 +89,7 @@ namespace ScoreOracleCSharp.Controllers
                 return NotFound();
             }
 
-            if (_context.Users.Any(u => (u.Email == userDto.Email || u.Username == userDto.Username) && u.Id != id))
+            if (await _context.Users.AnyAsync(u => (u.Email == userDto.Email || u.Username == userDto.Username) && u.Id != id))
             {
                 return BadRequest("Username or email already exists.");
             }
@@ -90,9 +101,33 @@ namespace ScoreOracleCSharp.Controllers
             user.DateOfBirth = userDto.DateOfBirth;
             user.ProfilePictureUrl = userDto.ProfilePictureUrl;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            return Ok(new { message = "User updated successfully." });
+            return Ok(UserMapper.ToUserDto(user));
+        }
+
+        /// <summary>
+        /// Deletes a user in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            if (id != GetAuthenticatedUserId())
+            {
+                return Unauthorized("You are not authorized to delete this user.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+            {
+                return NotFound("User not found and could not be deleted.");
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private int GetAuthenticatedUserId()

@@ -19,20 +19,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Teams
+        /// <summary>
+        /// Retrieves all teams in the database.
+        /// </summary>
+        /// <returns>A list of teams</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var teams = _context.Teams.ToList();
+            var teams = await _context.Teams.ToListAsync();
         
             return Ok(teams);
         }
 
-        // Get Team By ID
+        /// <summary>
+        /// Retrieves a team in the database.
+        /// </summary>
+        /// <returns>A specific team</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var team = _context.Teams.Find(id);
+            var team = await _context.Teams.FindAsync(id);
 
             if(team == null)
             {
@@ -42,7 +48,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(team);
         }
 
-        // Create Team
+        /// <summary>
+        /// Creates a team in the database
+        /// </summary>
+        /// <returns>The created team</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto teamDto)
         {
@@ -58,11 +67,14 @@ namespace ScoreOracleCSharp.Controllers
 
             var newTeam = TeamMapper.ToTeamFromCreateDTO(teamDto);
             _context.Teams.Add(newTeam);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newTeam.Id }, TeamMapper.ToTeamDto(newTeam));
         }
 
-        // Update Team
+        /// <summary>
+        /// Updates a team in the database
+        /// </summary>
+        /// <returns>The updated team</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateTeamDto teamDto)
@@ -99,6 +111,25 @@ namespace ScoreOracleCSharp.Controllers
             await _context.SaveChangesAsync();
             return Ok(TeamMapper.ToTeamDto(team));
 
+        }
+
+        /// <summary>
+        /// Deletes a team in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
+            if(team == null)
+            {
+                return NotFound("Team not found and could not be deleted");
+            }
+
+            _context.Teams.Remove(team);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> TeamExists(string teamCity, string teamName, int sportId)

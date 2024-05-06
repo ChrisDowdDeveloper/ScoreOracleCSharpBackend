@@ -19,20 +19,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Games
+        /// <summary>
+        /// Retrieves all games in the database.
+        /// </summary>
+        /// <returns>A list of games</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var games = _context.Games.ToList();
+            var games = await _context.Games.ToListAsync();
         
             return Ok(games);
         }
 
-        // Get Games By ID
+        /// <summary>
+        /// Retrieves a game in the database.
+        /// </summary>
+        /// <returns>A specific game</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var game = _context.Games.Find(id);
+            var game =await  _context.Games.FindAsync(id);
 
             if(game == null)
             {
@@ -42,30 +48,34 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(game);
         }
 
-        // Create Game
+        /// <summary>
+        /// Creates a game in the database
+        /// </summary>
+        /// <returns>The created game</returns>
         [HttpPost]
-        public IActionResult Create([FromBody] CreateGameDto gameDto)
+        public async Task<IActionResult> Create([FromBody] CreateGameDto gameDto)
         {
             if(gameDto.HomeTeamId == gameDto.AwayTeamId)
             {
                 return BadRequest("The same team cannot play eachother.");
             }
 
-            var homeTeamExists = _context.Teams.Any(t => t.Id == gameDto.HomeTeamId);
-            var awayTeamExists = _context.Teams.Any(t => t.Id == gameDto.AwayTeamId);
-            if(!homeTeamExists || !awayTeamExists)
+            if(!await TeamExists(gameDto.HomeTeamId) || !await TeamExists(gameDto.AwayTeamId))
             {
                 return BadRequest("One or both teams do not exist");
             }
 
             var newGame = GameMapper.ToGameFromCreateDTO(gameDto);
             _context.Games.Add(newGame);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newGame.Id }, GameMapper.ToGameDto(newGame));
         
         }
 
-        // Update Game
+        /// <summary>
+        /// Updates a game in the database
+        /// </summary>
+        /// <returns>The updated game</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateGameDto gameDto)
@@ -97,8 +107,26 @@ namespace ScoreOracleCSharp.Controllers
             if (gameDto.GameStatus.HasValue) game.GameStatus = gameDto.GameStatus.Value;
             if (gameDto.SportId.HasValue) game.SportId = gameDto.SportId.Value;
 
-            _context.SaveChanges();
-            return Ok(new { message = "Game updated successfully" });
+            await _context.SaveChangesAsync();
+            return Ok(GameMapper.ToGameDto(game));
+        }
+
+        /// <summary>
+        /// Deletes a friendship in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var game = await _context.Games.FirstOrDefaultAsync(g => g.Id == id);
+            if(game == null)
+            {
+                return NotFound("Game could not be found or deleted.");
+            }
+            _context.Games.Remove(game);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> TeamExists(int teamId)

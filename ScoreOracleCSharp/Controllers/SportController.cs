@@ -20,20 +20,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Sports
+        /// <summary>
+        /// Retrieves all sports in the database.
+        /// </summary>
+        /// <returns>A list of sports</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var sports = _context.Sports.ToList();
+            var sports = await _context.Sports.ToListAsync();
         
             return Ok(sports);
         }
 
-        // Get Sport By ID
+        /// <summary>
+        /// Retrieves a sport in the database.
+        /// </summary>
+        /// <returns>A specific sport</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var sport = _context.Sports.Find(id);
+            var sport = await _context.Sports.FindAsync(id);
 
             if(sport == null)
             {
@@ -43,7 +49,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(sport);
         }
 
-        // Create Sport
+        /// <summary>
+        /// Creates a sport in the database
+        /// </summary>
+        /// <returns>The created sport</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSportDto sportDto)
         {
@@ -63,7 +72,10 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newSport.Id }, SportMapper.ToSportDto(newSport));
         }
 
-        // Update Sport
+        /// <summary>
+        /// Updates a sport in the database
+        /// </summary>
+        /// <returns>The updated sport</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateSportDto sportDto)
@@ -98,6 +110,25 @@ namespace ScoreOracleCSharp.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(SportMapper.ToSportDto(sport));
+        }
+
+        /// <summary>
+        /// Deletes a sport in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var sport = await _context.Sports.FirstOrDefaultAsync(s => s.Id == id);
+            if(sport == null)
+            {
+                return NotFound("Sport not found and could not be deleted");
+            }
+
+            _context.Sports.Remove(sport);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
         
         private async Task<bool> SportExists(string name, string abbreviation)

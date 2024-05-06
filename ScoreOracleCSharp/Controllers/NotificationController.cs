@@ -21,20 +21,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Notifications
+        /// <summary>
+        /// Retrieves all notifications in the database.
+        /// </summary>
+        /// <returns>A list of notifications</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var notifications = _context.Notifications.ToList();
+            var notifications = await _context.Notifications.ToListAsync();
         
             return Ok(notifications);
         }
 
-        // Get Notification By ID
+        /// <summary>
+        /// Retrieves a notification in the database.
+        /// </summary>
+        /// <returns>A specific notification</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var notification = _context.Notifications.Find(id);
+            var notification = await _context.Notifications.FindAsync(id);
 
             if(notification == null)
             {
@@ -44,7 +50,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(notification);
         }
 
-        // Create Notification
+        /// <summary>
+        /// Creates a friendship in the database
+        /// </summary>
+        /// <returns>The created friendship</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateNotificationDto notificationDto)
         {
@@ -59,7 +68,10 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newNotification.Id }, NotificationMapper.ToNotificationDto(newNotification));
         }
 
-        // Update Notification
+        /// <summary>
+        /// Updates a notification in the database
+        /// </summary>
+        /// <returns>The updated notification</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateNotificationDto notificationDto)
@@ -107,6 +119,26 @@ namespace ScoreOracleCSharp.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(NotificationMapper.ToNotificationDto(notification));
+        }
+
+        /// <summary>
+        /// Deletes a notification in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id);
+            if(notification == null)
+            {
+                return NotFound("Notification not found and could not be deleted");
+            }
+
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> UserExists(int userId)

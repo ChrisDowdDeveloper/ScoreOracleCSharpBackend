@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Group;
 using ScoreOracleCSharp.Mappers;
 
@@ -18,20 +19,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Groups
+        /// <summary>
+        /// Retrieves all groups in the database.
+        /// </summary>
+        /// <returns>A list of groups</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var groups = _context.Groups.ToList();
+            var groups = await _context.Groups.ToListAsync();
         
             return Ok(groups);
         }
 
-        // Get Groups By ID
+        /// <summary>
+        /// Retrieves a group in the database.
+        /// </summary>
+        /// <returns>A specific group</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var group = _context.Users.Find(id);
+            var group = await _context.Users.FindAsync(id);
 
             if(group == null)
             {
@@ -41,11 +48,14 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(group);
         }
 
-        // Create Group
+        /// <summary>
+        /// Creates a group in the database
+        /// </summary>
+        /// <returns>The created group</returns>
         [HttpPost]
-        public IActionResult Create([FromBody] CreateGroupDto groupDto)
+        public async Task<IActionResult> Create([FromBody] CreateGroupDto groupDto)
         {
-            if (!UserExists(groupDto.CreatedByUserId))
+            if (!await UserExists(groupDto.CreatedByUserId))
             {
                 return BadRequest("Invalid user ID.");
             }
@@ -57,11 +67,14 @@ namespace ScoreOracleCSharp.Controllers
 
             var newGroup = GroupMapper.ToGroupFromCreateDTO(groupDto);
             _context.Groups.Add(newGroup);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newGroup.Id }, GroupMapper.ToGroupDto(newGroup));
         }
 
-        // Update Group
+        /// <summary>
+        /// Updates a friendship in the database
+        /// </summary>
+        /// <returns>The updated friendship</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateGroupDto groupDto)
@@ -87,12 +100,36 @@ namespace ScoreOracleCSharp.Controllers
 
             group.Name = groupDto.Name;
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Group updated successfully", groupId = group.Id });
+            return Ok(GroupMapper.ToGroupDto(group));
         }
-        
-        private bool UserExists(int userId)
+
+        /// <summary>
+        /// Deletes a friendship in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            return _context.Users.Any(u => u.Id == userId);
+            var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == id);
+            if(group == null)
+            {
+                return NotFound("Group could not be found or deleted.");
+            }
+
+            var userId = GetAuthenticatedUserId();
+            if (group.CreatedByUserId != userId)
+            {
+                return Unauthorized("You do not have permission to delete this group.");
+            }
+
+            _context.Groups.Remove(group);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }        
+        private async Task<bool> UserExists(int userId)
+        {
+            return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
         private int GetAuthenticatedUserId()

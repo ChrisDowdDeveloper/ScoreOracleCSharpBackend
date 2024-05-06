@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.GroupMember;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -20,20 +21,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Group Members
+        /// <summary>
+        /// Retrieves all group members in the database.
+        /// </summary>
+        /// <returns>A list of group members</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var members = _context.GroupMembers.ToList();
+            var members = await _context.GroupMembers.ToListAsync();
         
             return Ok(members);
         }
 
-        // Get Group Member by ID
+        /// <summary>
+        /// Retrieves a group member in the database.
+        /// </summary>
+        /// <returns>A specific group member</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var member = _context.GroupMembers.Find(id);
+            var member = await _context.GroupMembers.FindAsync(id);
 
             if(member == null)
             {
@@ -43,11 +50,15 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(member);
         }
 
-        // Create Group Member
+        /// <summary>
+        /// Creates a group member in the database
+        /// </summary>
+        /// <returns>The created group member</returns>
         [HttpPost]
-        public IActionResult Create([FromBody] CreateGroupMemberDto groupMemberDto)
+        public async Task<IActionResult> Create([FromBody] CreateGroupMemberDto groupMemberDto)
         {
-            if(!UserExists(groupMemberDto.UserId))
+
+            if(!await UserExists(groupMemberDto.UserId))
             {
                 return BadRequest("Invalid user ID.");
             }
@@ -57,18 +68,22 @@ namespace ScoreOracleCSharp.Controllers
                 return Unauthorized("You are not authorized to make this user a group member.");
             }
 
-            if(!GroupExists(groupMemberDto.GroupId))
+            if(!await GroupExists(groupMemberDto.GroupId))
             {
                 return BadRequest("Invalid group ID.");
             }
 
             var newGroupMember = GroupMemberMapper.ToGroupMemberFromCreateDTO(groupMemberDto);
             _context.GroupMembers.Add(newGroupMember);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newGroupMember.Id }, GroupMemberMapper.ToGroupMemberDto(newGroupMember));
             
         }
 
+        /// <summary>
+        /// Updates a group member in the database
+        /// </summary>
+        /// <returns>The updated group member</returns>
         [HttpPatch]
         [Route("{memberId}")]
         public async Task<IActionResult> UpdateGroupMember([FromRoute] int memberId, [FromBody] UpdateGroupMemberDto groupMemberDto)
@@ -84,19 +99,43 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("The group does not exist");
             }
 
-            if(!UserHasPermissionToUpdate(member))
+            if(!UserHasPermissionToUpdate(memberId))
             {
                 return Unauthorized("You do not have permission to update this group member.");
             }
 
             member.GroupId = groupMemberDto.GroupId;
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Group member updated successfully." });
+            return Ok(GroupMemberMapper.ToGroupMemberDto(member));
         }
 
-        private bool UserExists(int userId)
+        /// <summary>
+        /// Deletes a group member in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            return _context.Users.Any(u => u.Id == userId);
+            if (!UserHasPermissionToUpdate(id))
+            {
+                return Unauthorized("Not authorized to update this friendship.");
+            }
+
+            var member = await _context.Friendships.FirstOrDefaultAsync(m => m.Id == id);
+            if(member == null)
+            {
+                return NotFound("Group member not found and could not be deleted");
+            }
+
+            _context.Friendships.Remove(member);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        private async Task<bool> UserExists(int userId)
+        {
+            return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
         private int GetAuthenticatedUserId()
@@ -104,12 +143,12 @@ namespace ScoreOracleCSharp.Controllers
             return 0;
         }
 
-        private bool GroupExists(int groupId)
+        private async Task<bool> GroupExists(int groupId)
         {
-            return _context.Groups.Any(g => g.Id == groupId);
+            return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
 
-        private bool UserHasPermissionToUpdate(GroupMember member)
+        private bool UserHasPermissionToUpdate(int memberId)
         {
             // Implement your authorization logic here
             // Example: Check if the current user is an admin or the group leader

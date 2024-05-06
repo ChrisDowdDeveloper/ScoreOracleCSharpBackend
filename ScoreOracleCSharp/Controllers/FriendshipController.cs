@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Friendship;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -20,20 +21,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Friendships
+        /// <summary>
+        /// Retrieves all friendships in the database.
+        /// </summary>
+        /// <returns>A list of friendships</returns>
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var friendships = _context.Friendships.ToList();
+            var friendships = await _context.Friendships.ToListAsync();
 
             return Ok(friendships);
         }
         
-        // Get Friendships by ID
+        /// <summary>
+        /// Retrieves a friendship in the database.
+        /// </summary>
+        /// <returns>A specific friendship</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var friendship = _context.Friendships.Find(id);
+            var friendship = await _context.Friendships.FindAsync(id);
 
             if(friendship == null)
             {
@@ -43,9 +50,12 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(friendship);
         }
 
-        // Create User
+        /// <summary>
+        /// Creates a friendship in the database
+        /// </summary>
+        /// <returns>The created friendship</returns>
         [HttpPost]
-        public IActionResult Create([FromBody] CreateFriendshipDto friendshipDto)
+        public async Task<IActionResult> Create([FromBody] CreateFriendshipDto friendshipDto)
         {
 
             if(friendshipDto.RequesterId == friendshipDto.ReceiverId)
@@ -55,13 +65,16 @@ namespace ScoreOracleCSharp.Controllers
 
             var newFriendship = FriendshipMapper.ToFriendshipFromCreateDTO(friendshipDto);
             _context.Friendships.Add(newFriendship);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newFriendship.Id }, FriendshipMapper.ToFriendshipDto(newFriendship));
 
         }
 
-        // Update User
-        [HttpPut]
+        /// <summary>
+        /// Updates a friendship in the database
+        /// </summary>
+        /// <returns>The updated friendship</returns>
+        [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateFriendshipDto friendshipDto)
         {
@@ -71,7 +84,7 @@ namespace ScoreOracleCSharp.Controllers
                 return NotFound();
             }
 
-            if (!UserExists(friendshipDto.RequesterId) || !UserExists(friendshipDto.ReceiverId))
+            if (!await UserExists(friendshipDto.RequesterId) || !await UserExists(friendshipDto.ReceiverId))
             {
                 return BadRequest("Invalid requester or receiver ID.");
             }
@@ -86,13 +99,37 @@ namespace ScoreOracleCSharp.Controllers
             friendship.Status = friendshipDto.Status;
             
 
-            _context.SaveChanges();
-            return Ok(new { message = "Friendship updated successfully" });
+            await _context.SaveChangesAsync();
+            return Ok(FriendshipMapper.ToFriendshipDto(friendship));
         }
 
-        private bool UserExists(int userId)
+        /// <summary>
+        /// Deletes a friendship in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            return _context.Users.Any(u => u.Id == userId);
+            if (!IsAuthorizedToUpdateFriendship(id))
+            {
+                return Unauthorized("Not authorized to update this friendship.");
+            }
+
+            var friendship = await _context.Friendships.FirstOrDefaultAsync(f => f.Id == id);
+            if(friendship == null)
+            {
+                return NotFound("Friendship not found and could not be deleted");
+            }
+
+            _context.Friendships.Remove(friendship);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        private async Task<bool> UserExists(int userId)
+        {
+            return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
         private bool IsAuthorizedToUpdateFriendship(int friendshipId)

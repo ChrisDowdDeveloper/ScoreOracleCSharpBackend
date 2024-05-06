@@ -25,21 +25,21 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of players</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var players = _context.Players.ToList();
+            var players = await _context.Players.ToListAsync();
         
             return Ok(players);
         }
 
         /// <summary>
-        /// Retrieves a players in the database.
+        /// Retrieves a player in the database.
         /// </summary>
         /// <returns>A specific player</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var player = _context.Players.Find(id);
+            var player = await _context.Players.FindAsync(id);
 
             if(player == null)
             {
@@ -115,6 +115,25 @@ namespace ScoreOracleCSharp.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(PlayerMapper.ToPlayerDto(player));
+        }
+
+        /// <summary>
+        /// Deletes a player in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var player = await _context.Players.FirstOrDefaultAsync(p => p.Id == id);
+            if(player == null)
+            {
+                return NotFound("Player not found and could not be deleted");
+            }
+
+            _context.Players.Remove(player);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> TeamExists(int teamId)

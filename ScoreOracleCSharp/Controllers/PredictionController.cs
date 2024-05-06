@@ -20,20 +20,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Predictions
+        /// <summary>
+        /// Retrieves all predictions in the database.
+        /// </summary>
+        /// <returns>A list of predictions</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var predictions = _context.Predictions.ToList();
+            var predictions = await _context.Predictions.ToListAsync();
         
             return Ok(predictions);
         }
 
-        // Get Predictions By ID
+        /// <summary>
+        /// Retrieves a prediction in the database.
+        /// </summary>
+        /// <returns>A specific prediction</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var prediction = _context.Predictions.Find(id);
+            var prediction = await _context.Predictions.FindAsync(id);
 
             if(prediction == null)
             {
@@ -43,7 +49,10 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(prediction);
         }
 
-        // Create Prediction
+        /// <summary>
+        /// Creates a prediction in the database
+        /// </summary>
+        /// <returns>The created prediction</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePredictionDto predictionDto)
         {
@@ -69,11 +78,14 @@ namespace ScoreOracleCSharp.Controllers
 
             var newPrediction = PredictionMapper.ToPredictionFromCreateDTO(predictionDto);
             _context.Predictions.Add(newPrediction);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newPrediction.Id }, PredictionMapper.ToPredictionDto(newPrediction));
         }
 
-        //Update Prediction
+        /// <summary>
+        /// Updates a prediction in the database
+        /// </summary>
+        /// <returns>The updated prediction</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePredictionDto predictionDto)
@@ -120,6 +132,29 @@ namespace ScoreOracleCSharp.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(PredictionMapper.ToPredictionDto(prediction));
+        }
+
+        /// <summary>
+        /// Deletes a prediction in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            /*if (GetAuthenticatedUserId())
+            {
+                return Unauthorized("You are not authorized to delete predictions for other users.");
+            }*/
+            var prediction = await _context.Predictions.FirstOrDefaultAsync(p => p.Id == id);
+            if(prediction == null)
+            {
+                return NotFound("Prediction not found and could not be deleted");
+            }
+
+            _context.Predictions.Remove(prediction);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         private async Task<bool> UserExists(int userId)

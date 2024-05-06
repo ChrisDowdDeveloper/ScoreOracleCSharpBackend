@@ -19,20 +19,26 @@ namespace ScoreOracleCSharp.Controllers
             _context = context;
         }
 
-        // Get All Injuries
+        /// <summary>
+        /// Retrieves all injuries in the database.
+        /// </summary>
+        /// <returns>A list of injuries</returns>
         [HttpGet]
-        public IActionResult GetAll() 
+        public async Task<IActionResult> GetAll() 
         {
-            var injuries = _context.Injuries.ToList();
+            var injuries = await _context.Injuries.ToListAsync();
         
             return Ok(injuries);
         }
 
-        // Get Injury By ID
+        /// <summary>
+        /// Retrieves an injury in the database.
+        /// </summary>
+        /// <returns>A specific injury</returns>
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var injury = _context.Injuries.Find(id);
+            var injury = await _context.Injuries.FindAsync(id);
 
             if(injury == null)
             {
@@ -42,32 +48,38 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(injury);
         }
 
-        // Create Injury 
+        /// <summary>
+        /// Creates an injury in the database
+        /// </summary>
+        /// <returns>The created injury</returns>
         [HttpPost]
-        public IActionResult Create([FromBody] CreateInjuryDto injuryDto)
+        public async Task<IActionResult> Create([FromBody] CreateInjuryDto injuryDto)
         {
-            if(!PlayerExists(injuryDto.PlayerId))
+            if(!await PlayerExists(injuryDto.PlayerId))
             {
                 return BadRequest("Player does not exist with that ID.");
             }
 
-            if(!TeamExists(injuryDto.TeamId))
+            if(!await TeamExists(injuryDto.TeamId))
             {
                 return BadRequest("Team does not exist with that ID.");
             }
 
-            if(!PlayerOnTeam(injuryDto.PlayerId, injuryDto.TeamId))
+            if(!await PlayerOnTeam(injuryDto.PlayerId, injuryDto.TeamId))
             {
                 return BadRequest("Player is not on that team");
             }
 
             var newInjury = InjuryMapper.ToInjuryFromCreateDTO(injuryDto);
             _context.Injuries.Add(newInjury);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = newInjury.Id }, InjuryMapper.ToInjuryDto(newInjury));
         }
 
-        // Update Injury
+        /// <summary>
+        /// Updates an injury in the database
+        /// </summary>
+        /// <returns>The updated injury</returns>
         [HttpPatch]
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateInjuryDto injuryDto)
@@ -101,21 +113,41 @@ namespace ScoreOracleCSharp.Controllers
             injury.Description = injuryDto.Description;
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Injury has been updated successfully." });
-        }
-        private bool PlayerExists(int playerId)
-        {
-            return _context.Players.Any(p => p.Id == playerId);
+            return Ok(InjuryMapper.ToInjuryDto(injury));
         }
 
-        private bool TeamExists(int teamId)
+        /// <summary>
+        /// Deletes an injury in the database
+        /// </summary>
+        /// <returns>No Content</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            return _context.Teams.Any(t => t.Id == teamId);
+            var injury = await _context.Injuries.FirstOrDefaultAsync(i => i.Id == id);
+            if(injury == null)
+            {
+                return NotFound("Injury not found and could not be deleted");
+            }
+
+            _context.Injuries.Remove(injury);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        
+        private async Task<bool> PlayerExists(int playerId)
+        {
+            return await _context.Players.AnyAsync(p => p.Id == playerId);
         }
 
-        private bool PlayerOnTeam(int playerId, int teamId)
+        private async Task<bool> TeamExists(int teamId)
         {
-            return _context.Players.Any(p => p.Id == playerId && p.TeamId == teamId);
+            return await _context.Teams.AnyAsync(t => t.Id == teamId);
+        }
+
+        private async Task<bool> PlayerOnTeam(int playerId, int teamId)
+        {
+            return await _context.Players.AnyAsync(p => p.Id == playerId && p.TeamId == teamId);
         }
     }
 }
