@@ -8,7 +8,7 @@ namespace ScoreOracleCSharp.Dtos.Friendship
 {
     public class CreateFriendshipDto
     {
-        public int? RequesterId { get; set; }
-        public int? ReceiverId { get; set; }
+        public string RequesterId { get; set; } = string.Empty;
+        public string ReceiverId { get; set; } = string.Empty;
     }
 }

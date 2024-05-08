@@ -8,6 +8,6 @@ namespace ScoreOracleCSharp.Dtos.Group
     public class CreateGroupDto
     {
         public string Name { get; set; } = string.Empty;
-        public int CreatedByUserId { get; set; }
+        public string CreatedByUserId { get; set; } = string.Empty;
     }
 }

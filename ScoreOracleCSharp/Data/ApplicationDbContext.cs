@@ -1,15 +1,15 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp
 {
-    public class ApplicationDBContext: DbContext
+    public class ApplicationDBContext : IdentityDbContext<User>
     {
-        public ApplicationDBContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
+        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options)
+            : base(options)
         {
-            
         }
-
 
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<Game> Games { get; set; }
@@ -22,14 +22,12 @@ namespace ScoreOracleCSharp
         public DbSet<Prediction> Predictions { get; set; }
         public DbSet<Sport> Sports { get; set; }
         public DbSet<Team> Teams { get; set; }
-        public DbSet<User> Users { get; set; }
         public DbSet<UserScore> UserScores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure the User-Friendship relationships
             modelBuilder.Entity<Friendship>()
                 .HasOne(f => f.Requester)
                 .WithMany(u => u.RequestedFriendships)
@@ -53,8 +51,6 @@ namespace ScoreOracleCSharp
                 .WithMany(t => t.HomeGames)
                 .HasForeignKey(g => g.HomeTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
-                
         }
-
     }
 }

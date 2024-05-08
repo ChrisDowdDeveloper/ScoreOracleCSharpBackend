@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.User;
 using ScoreOracleCSharp.Mappers;
+using ScoreOracleCSharp.Models;
+using System.Threading.Tasks;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -12,127 +12,121 @@ namespace ScoreOracleCSharp.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly ApplicationDBContext _context;
-        public UserController(ApplicationDBContext context)
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
+
+        public UserController(UserManager<User> userManager, SignInManager<User> signInManager)
         {
-            _context = context;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
-        /// <summary>
-        /// Retrieves all users in the database.
-        /// </summary>
-        /// <returns>A list of userse</returns>
+        // GET: api/user
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAllUsers() 
         {
-            var users = await _context.Users.ToListAsync();
-        
-            return Ok(users);
+            var users = await _userManager.Users.ToListAsync();
+            var userDtos = users.Select(user => UserMapper.ToUserDto(user)).ToList();
+            return Ok(userDtos);
         }
 
-        /// <summary>
-        /// Retrieves a user in the database.
-        /// </summary>
-        /// <returns>A specific user</returns>
+        // GET: api/user/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        public async Task<IActionResult> GetUserById(string id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok(UserMapper.ToUserDto(user));
+        }
 
+        // POST: api/user/register
+        [HttpPost("register")]
+        public async Task<IActionResult> RegisterUser([FromBody] CreateUserRequestDto createUserDto)
+        {
+            var user = UserMapper.ToUserFromCreateDTO(createUserDto);
+            var result = await _userManager.CreateAsync(user, createUserDto.Password);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, UserMapper.ToUserDto(user));
+        }
+
+        // POST: api/user/login
+        [HttpPost("login")]
+        public async Task<IActionResult> LoginUser([FromBody] LoginUserDto loginUserDto)
+        {
+            var user = await _userManager.FindByEmailAsync(loginUserDto.Email);
             if(user == null)
+            {
+                return BadRequest("Invalid email or password");
+            }
+            var result = await _signInManager.PasswordSignInAsync(user, loginUserDto.Password, false, false);
+            if(result.Succeeded)
+            {
+                var userDto = UserMapper.ToUserDto(user);
+                return Ok(userDto);
+            }
+            else
+            {
+                return BadRequest("Invalid email or password");
+            }
+        }
+
+        // PATCH: api/user/{id}
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto userDto)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
             {
                 return NotFound();
             }
 
-            return Ok(user);
-        }
-
-        /// <summary>
-        /// Creates a user in the database
-        /// </summary>
-        /// <returns>The created user</returns>
-        [HttpPost]
-        public async Task<IActionResult> Register([FromBody] CreateUserRequestDto createUserDto)
-        {
-            if (await _context.Users.AnyAsync(u => u.Email == createUserDto.Email))
-            {
-                return BadRequest("Email already in use.");
-            }
-            if (await _context.Users.AnyAsync(u => u.Username == createUserDto.Username))
-            {
-                return BadRequest("Username already in use.");
-            }
-
-            var newUser = UserMapper.ToUserFromCreateDTO(createUserDto);
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, UserMapper.ToUserDto(newUser));
-        }
-
-        /// <summary>
-        /// Updates a user in the database
-        /// </summary>
-        /// <returns>The updated user</returns>
-        [HttpPatch]
-        [Route("{id}")]
-        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserDto userDto)
-        {
-            /*if (id != GetAuthenticatedUserId())
-            {
-                return Unauthorized("You are not authorized to update this user.");
-            }
-            */
-
-            var user = await _context.Users.FindAsync(id);
-            if(user == null)
-            {
-                return NotFound();
-            }
-
-            if (await _context.Users.AnyAsync(u => (u.Email == userDto.Email || u.Username == userDto.Username) && u.Id != id))
-            {
-                return BadRequest("Username or email already exists.");
-            }
-
-            user.Username = userDto.Username;
+            // Update the user properties
+            user.UserName = userDto.Username;
             user.Email = userDto.Email;
             user.FirstName = userDto.FirstName;
             user.LastName = userDto.LastName;
-            user.DateOfBirth = userDto.DateOfBirth;
             user.ProfilePictureUrl = userDto.ProfilePictureUrl;
 
-            await _context.SaveChangesAsync();
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
 
             return Ok(UserMapper.ToUserDto(user));
         }
 
-        /// <summary>
-        /// Deletes a user in the database
-        /// </summary>
-        /// <returns>No Content</returns>
-        [HttpDelete]
-        [Route("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        // DELETE: api/user/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(string id)
         {
-            if (id != GetAuthenticatedUserId())
-            {
-                return Unauthorized("You are not authorized to delete this user.");
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
-                return NotFound("User not found and could not be deleted.");
+                return NotFound();
             }
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
             return NoContent();
         }
 
-        private int GetAuthenticatedUserId()
+        // Helper method to get authenticated user ID
+        private string? GetAuthenticatedUserId()
         {
-            return 0;
+            return User.Identity?.Name ?? throw new InvalidOperationException("User must be authenticated.");
         }
     }
 }

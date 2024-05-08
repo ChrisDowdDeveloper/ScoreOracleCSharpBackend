@@ -7,7 +7,7 @@ namespace ScoreOracleCSharp.Dtos.Prediction
 {
     public class UpdatePredictionDto
     {
-        public int UserId { get; set; }
+        public string? UserId { get; set; }
         public DateOnly PredictionDate { get; set; }
         public int? GameId { get; set; }
         public DateOnly GameDate { get; set; }

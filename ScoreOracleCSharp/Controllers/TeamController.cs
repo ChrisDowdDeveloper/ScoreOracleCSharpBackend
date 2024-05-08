@@ -55,7 +55,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto teamDto)
         {
-            if(!await TeamExists(teamDto.City, teamDto.Name, teamDto.SportId))
+            if(await TeamExists(teamDto.City, teamDto.Name, teamDto.SportId))
             {
                 return BadRequest("Team in that city already exists with that name");
             }

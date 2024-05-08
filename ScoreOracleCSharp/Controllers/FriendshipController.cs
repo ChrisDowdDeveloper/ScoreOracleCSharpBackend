@@ -93,11 +93,7 @@ namespace ScoreOracleCSharp.Controllers
             {
                 return Unauthorized("Not authorized to update this friendship.");
             }
-
-            friendship.RequesterId = friendshipDto.RequesterId;
-            friendship.ReceiverId = friendshipDto.ReceiverId;
             friendship.Status = friendshipDto.Status;
-            
 
             await _context.SaveChangesAsync();
             return Ok(FriendshipMapper.ToFriendshipDto(friendship));
@@ -127,7 +123,7 @@ namespace ScoreOracleCSharp.Controllers
             return NoContent();
         }
 
-        private async Task<bool> UserExists(int userId)
+        private async Task<bool> UserExists(string userId) 
         {
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }

@@ -157,7 +157,7 @@ namespace ScoreOracleCSharp.Controllers
             return NoContent();
         }
 
-        private async Task<bool> UserExists(int userId)
+        private async Task<bool> UserExists(string userId) 
         {
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }
@@ -172,9 +172,9 @@ namespace ScoreOracleCSharp.Controllers
             return await _context.Teams.AnyAsync(t => t.Id == teamId);
         }
 
-        private int GetAuthenticatedUserId()
+        private string GetAuthenticatedUserId()
         {
-            return 0;
+            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");
         }
     }
 }

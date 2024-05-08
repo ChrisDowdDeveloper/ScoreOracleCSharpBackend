@@ -61,7 +61,7 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("The sport name and abbreviation cannot be empty.");
             }
 
-            if (!await SportExists(sportDto.Name, sportDto.Abbreviation))
+            if (await SportExists(sportDto.Name, sportDto.Abbreviation))
             {
                 return BadRequest("A sport with the same name or abbreviation already exists.");
             }

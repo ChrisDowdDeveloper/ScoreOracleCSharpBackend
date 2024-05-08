@@ -8,7 +8,7 @@ namespace ScoreOracleCSharp.Dtos.Notification
 {
     public class CreateNotificationDto
     {
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public NotificationType Type { get; set; } = NotificationType.GAME_RESULT;
         public string Content { get; set; } = string.Empty;
 

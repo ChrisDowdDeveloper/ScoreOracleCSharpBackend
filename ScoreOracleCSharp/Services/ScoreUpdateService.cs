@@ -42,7 +42,7 @@ namespace ScoreOracleCSharp.Services
             {
                 foreach (var prediction in game.GamePrediction)
                 {
-                    if (!prediction.UserId.HasValue) continue;
+                    if (string.IsNullOrEmpty(prediction.UserId)) continue;
 
                     int pointsAwarded = 0;
 
@@ -61,12 +61,12 @@ namespace ScoreOracleCSharp.Services
 
                     // Update or create the user score record
                     if (pointsAwarded > 0) {
-                        var userScore = dbContext.UserScores.FirstOrDefault(us => us.UserId == prediction.UserId.Value);
+                        var userScore = dbContext.UserScores.FirstOrDefault(us => us.UserId == prediction.UserId);
                         if (userScore != null) {
                             userScore.Score += pointsAwarded;
                         } else {
                             dbContext.UserScores.Add(new UserScore {
-                                UserId = prediction.UserId.Value,
+                                UserId = prediction.UserId,
                                 Score = pointsAwarded,
                                 UpdatedLast = DateTime.UtcNow
                             });

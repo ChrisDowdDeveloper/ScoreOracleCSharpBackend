@@ -14,8 +14,8 @@ namespace ScoreOracleCSharp.Mappers
             return new UserScoreDto
             {
                 Id = userScoreModel.Id,
-                UserId = userScoreModel.UserId ?? 0,
-                Username = userScoreModel.User?.Username ?? "Unknown",
+                UserId = userScoreModel.UserId,
+                Username = userScoreModel.User?.UserName ?? "Unknown",
                 LeaderboardId = userScoreModel.LeaderboardId ?? 0,
                 LeaderboardName = userScoreModel.Leaderboard?.Name ?? "Unknown",
                 Score = userScoreModel.Score,

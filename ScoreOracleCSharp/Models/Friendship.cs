@@ -11,10 +11,10 @@
     {
         public int Id { get; set; }
 
-        public int? RequesterId { get; set; }
+        public string? RequesterId { get; set; }
         public User? Requester { get; set; }
 
-        public int? ReceiverId { get; set; }
+        public string? ReceiverId { get; set; }
         public User? Receiver { get; set; }
 
         public FriendshipStatus Status { get; set; } = FriendshipStatus.Pending;

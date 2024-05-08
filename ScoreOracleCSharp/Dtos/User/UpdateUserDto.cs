@@ -1,19 +1,16 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace ScoreOracleCSharp.Dtos.User
 {
     public class UpdateUserDto
     {
+        [Required, MinLength(3)]
         public string Username { get; set; } = string.Empty;
+        [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public DateOnly DateOfBirth { get; set; } = new DateOnly();
-        public string ProfilePictureUrl {  get; set; } = string.Empty;
-
+        public string ProfilePictureUrl { get; set; } = string.Empty;
     }
 }

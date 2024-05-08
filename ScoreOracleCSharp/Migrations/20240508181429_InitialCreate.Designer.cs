@@ -12,8 +12,8 @@ using ScoreOracleCSharp;
 namespace ScoreOracleCSharp.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20240505043832_AddCreatedByUserIdToGroup")]
-    partial class AddCreatedByUserIdToGroup
+    [Migration("20240508181429_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,11 +36,11 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<DateTime?>("DateEstablished")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("ReceiverId")
-                        .HasColumnType("int");
+                    b.Property<string>("ReceiverId")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("RequesterId")
-                        .HasColumnType("int");
+                    b.Property<string>("RequesterId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -80,6 +80,9 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<int>("HomeTeamScore")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ScoresUpdated")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("SportId")
                         .HasColumnType("int");
 
@@ -102,11 +105,12 @@ namespace ScoreOracleCSharp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("int");
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("CreatedByUserId")
-                        .HasColumnType("int");
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
@@ -136,8 +140,8 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<DateOnly>("JoinedAt")
                         .HasColumnType("date");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -221,8 +225,8 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -292,8 +296,8 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -367,21 +371,23 @@ namespace ScoreOracleCSharp.Migrations
 
             modelBuilder.Entity("ScoreOracleCSharp.Models.User", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("ConcurrencyStamp")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("date");
-
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -394,16 +400,38 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<int?>("LeaderboardId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Password")
-                        .IsRequired()
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ProfilePictureUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Username")
-                        .IsRequired()
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -430,8 +458,8 @@ namespace ScoreOracleCSharp.Migrations
                     b.Property<DateTime>("UpdatedLast")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 

@@ -21,8 +21,8 @@ namespace ScoreOracleCSharp.Mappers
 
                 UserScores = leaderboardModel.ScoreByUser.Select(us => new SimpleUserScore
                 {
-                    UserId = us.UserId ?? 0,
-                    Username = us.User?.Username ?? "Unknown",
+                    UserId = us.UserId,
+                    Username = us.User?.UserName ?? "Unknown",
                     Score = us.Score
                 }).ToList()
             };

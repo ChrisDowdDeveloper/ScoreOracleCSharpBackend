@@ -14,10 +14,10 @@ namespace ScoreOracleCSharp.Mappers
             return new FriendshipDto 
             {
                 Id = friendshipModel.Id,
-                RequesterId = friendshipModel.RequesterId ?? 0,
-                RequesterUsername = friendshipModel.Requester?.Username ?? "Unknown",
-                ReceiverId = friendshipModel.ReceiverId ?? 0,
-                ReceiverUsername = friendshipModel.Receiver?.Username ?? "Unknown",
+                RequesterId = friendshipModel.RequesterId ?? "Unknown",
+                RequesterUsername = friendshipModel.Requester?.UserName ?? "Unknown",
+                ReceiverId = friendshipModel.ReceiverId ?? "Unknown",
+                ReceiverUsername = friendshipModel.Receiver?.UserName ?? "Unknown",
                 Status = friendshipModel.Status.ToString(),
                 DateEstablished = friendshipModel.DateEstablished
             };

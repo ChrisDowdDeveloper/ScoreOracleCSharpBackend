@@ -15,7 +15,7 @@ namespace ScoreOracleCSharp.Mappers
             {
                 Id = groupModel.Id,
                 Name = groupModel.Name,
-                CreatedByUserId = groupModel.CreatedByUserId ?? 0,
+                CreatedByUserId = groupModel.CreatedByUserId,
                 CreatedOn = groupModel.CreatedOn,
                 MemberCount = groupModel.Members.Count
             };

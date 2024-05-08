@@ -15,8 +15,8 @@ namespace ScoreOracleCSharp.Mappers
             {
                 Id = groupMemberModel.Id,
                 GroupId = groupMemberModel.GroupId ?? 0,
-                UserId = groupMemberModel.UserId ?? 0,
-                Username = groupMemberModel.User?.Username ?? "Unknown",
+                UserId = groupMemberModel.UserId,
+                Username = groupMemberModel.User?.UserName ?? "Unknown",
                 ProfilePictureUrl = groupMemberModel.User?.ProfilePictureUrl ?? string.Empty,
                 JoinedAt = groupMemberModel.JoinedAt
             };

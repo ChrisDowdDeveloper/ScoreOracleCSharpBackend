@@ -7,7 +7,7 @@ namespace ScoreOracleCSharp.Dtos.Prediction
 {
     public class CreatePredictionDto
     {
-        public int UserId { get; set; }
+        public string? UserId { get; set; }
         public int GameId { get; set; }
         public int PredictedTeamId { get; set; }
         public int PredictedHomeTeamScore { get; set; }

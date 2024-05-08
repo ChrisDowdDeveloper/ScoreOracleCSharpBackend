@@ -9,7 +9,7 @@ namespace ScoreOracleCSharp.Dtos.GroupMember
     {
         public int Id { get; set; }
         public int GroupId { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string ProfilePictureUrl { get; set; } = string.Empty;
         public DateOnly JoinedAt { get; set; }

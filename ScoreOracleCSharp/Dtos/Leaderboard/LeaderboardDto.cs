@@ -16,7 +16,7 @@ namespace ScoreOracleCSharp.Dtos.Leaderboard
     }
     public class SimpleUserScore
     {
-        public int UserId { get; set; }
+        public string? UserId { get; set; }
         public string Username { get; set; } = string.Empty;
         public int Score { get; set; }
     }

@@ -82,14 +82,11 @@ namespace ScoreOracleCSharp.Controllers
                 return NotFound("Notification not found.");
             }
 
-            if (notificationDto.UserId.HasValue)
+            if (!await UserExists(notificationDto.UserId))
             {
-                if (!await UserExists(notificationDto.UserId.Value))
-                {
-                    return BadRequest("User does not exist with that ID");
-                }
-                notification.UserId = notificationDto.UserId.Value;
+                return BadRequest("User does not exist with that ID");
             }
+            notification.UserId = notificationDto.UserId;
 
             if (!string.IsNullOrWhiteSpace(notificationDto.Type))
             {
@@ -141,7 +138,7 @@ namespace ScoreOracleCSharp.Controllers
             return NoContent();
         }
 
-        private async Task<bool> UserExists(int userId)
+        private async Task<bool> UserExists(string userId) 
         {
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }

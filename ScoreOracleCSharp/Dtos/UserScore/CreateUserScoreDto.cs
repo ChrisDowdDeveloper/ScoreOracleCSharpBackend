@@ -7,7 +7,7 @@ namespace ScoreOracleCSharp.Dtos.UserScore
 {
     public class CreateUserScoreDto
     {
-        public int UserId { get; set; }
+        public string? UserId { get; set; }
         public int LeaderboardId { get; set; }
         public int Score { get; set; }
     }
