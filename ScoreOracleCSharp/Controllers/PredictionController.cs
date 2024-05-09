@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Prediction;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 
@@ -15,8 +17,10 @@ namespace ScoreOracleCSharp.Controllers
     public class PredictionController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public PredictionController(ApplicationDBContext context)
+        private readonly IPredictionRepository _predictionRepository;
+        public PredictionController(ApplicationDBContext context, IPredictionRepository predictionRepository)
         {
+            _predictionRepository = predictionRepository;
             _context = context;
         }
 
@@ -27,7 +31,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var predictions = await _context.Predictions.ToListAsync();
+            var predictions = await _predictionRepository.GetAllAsync();
         
             return Ok(predictions);
         }
@@ -39,7 +43,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var prediction = await _context.Predictions.FindAsync(id);
+            var prediction = await _predictionRepository.GetByIdAsync(id);
 
             if(prediction == null)
             {
@@ -56,30 +60,24 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePredictionDto predictionDto)
         {
-            if (predictionDto.UserId != GetAuthenticatedUserId())
-            {
-                return Unauthorized("You are not authorized to make predictions for other users.");
-            }
-            
-            if(!await UserExists(predictionDto.UserId))
+            if(!await _predictionRepository.UserExists(predictionDto.UserId))
             {
                 return BadRequest("User does not exist with that ID");
             }
             
-            if(!await GameExists(predictionDto.GameId))
+            if(!await _predictionRepository.GameExists(predictionDto.GameId))
             {
                 return BadRequest("Game does not exist with that ID");
             }
 
-            if(!await TeamExists(predictionDto.PredictedTeamId))
+            if(!await _predictionRepository.TeamExists(predictionDto.PredictedTeamId))
             {
                 return BadRequest("Team does not exist with that ID");
             }
 
             var newPrediction = PredictionMapper.ToPredictionFromCreateDTO(predictionDto);
-            _context.Predictions.Add(newPrediction);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newPrediction.Id }, PredictionMapper.ToPredictionDto(newPrediction));
+            var createdPrediction = await _predictionRepository.CreateAsync(newPrediction);
+            return CreatedAtAction(nameof(GetById), new { id = newPrediction.Id }, PredictionMapper.ToPredictionDto(createdPrediction));
         }
 
         /// <summary>
@@ -90,48 +88,24 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePredictionDto predictionDto)
         {
-
-            if (predictionDto.UserId != GetAuthenticatedUserId())
+            var userId = GetAuthenticatedUserId();
+            if(!await _predictionRepository.UserCanModifyPrediction(userId, id))
             {
-                return Unauthorized("You are not authorized to make predictions for other users.");
+                return BadRequest("You cannot modify another persons prediction.");
             }
-
-            var prediction = await _context.Predictions.FindAsync(id);
-            var game = await _context.Games.FindAsync(predictionDto.GameId);
-            if(prediction == null)
+            try
             {
-                return NotFound("Prediction not found.");
+                var updatedPrediction = await _predictionRepository.UpdateAsync(id, predictionDto);
+                if(updatedPrediction == null)
+                {
+                    return NotFound("Prediction not found");
+                }
+                return Ok(PredictionMapper.ToPredictionDto(updatedPrediction));
             }
-
-            if(game == null)
+            catch(InvalidOperationException ex)
             {
-                return BadRequest("Invalid game.");
-            } 
-            else if(predictionDto.GameId.HasValue)
-            {
-                prediction.GameId = predictionDto.GameId.Value;
+                return BadRequest(ex.Message);
             }
-
-            if(predictionDto.PredictedTeamId.HasValue && !await TeamExists(predictionDto.PredictedTeamId.Value))
-            {
-                return BadRequest("Invalid team.");
-            }
-            else if(predictionDto.PredictedTeamId.HasValue)
-            {
-                prediction.PredictedTeamId = predictionDto.PredictedTeamId;
-            }
-
-            if(predictionDto.PredictionDate > game.GameDate)
-            {
-                return BadRequest("Prediction date cannot be after the game has been played.");
-            }
-            prediction.PredictionDate = predictionDto.PredictionDate;
-            
-            prediction.PredictedAwayTeamScore = predictionDto.PredictedAwayTeamScore ?? 0;
-            prediction.PredictedHomeTeamScore = predictionDto.PredictedHomeTeamScore ?? 0;
-
-            await _context.SaveChangesAsync();
-            return Ok(PredictionMapper.ToPredictionDto(prediction));
         }
 
         /// <summary>
@@ -142,36 +116,14 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            /*if (GetAuthenticatedUserId())
+            var userId = GetAuthenticatedUserId();
+            if(!await _predictionRepository.UserCanModifyPrediction(userId, id))
             {
-                return Unauthorized("You are not authorized to delete predictions for other users.");
-            }*/
-            var prediction = await _context.Predictions.FirstOrDefaultAsync(p => p.Id == id);
-            if(prediction == null)
-            {
-                return NotFound("Prediction not found and could not be deleted");
+                return BadRequest("You cannot modify another persons prediction.");
             }
-
-            _context.Predictions.Remove(prediction);
-            await _context.SaveChangesAsync();
+            await _predictionRepository.DeleteAsync(id);
             return NoContent();
         }
-
-        private async Task<bool> UserExists(string userId) 
-        {
-            return await _context.Users.AnyAsync(u => u.Id == userId);
-        }
-
-        private async Task<bool> GameExists(int gameId)
-        {
-            return await _context.Games.AnyAsync(g => g.Id == gameId);
-        }
-
-        private async Task<bool> TeamExists(int teamId)
-        {
-            return await _context.Teams.AnyAsync(t => t.Id == teamId);
-        }
-
         private string GetAuthenticatedUserId()
         {
             return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");

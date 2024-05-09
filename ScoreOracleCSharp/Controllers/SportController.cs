@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoreOracleCSharp.Dtos.Sport;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
+using ScoreOracleCSharp.Repository;
 
 namespace ScoreOracleCSharp.Controllers
 {
@@ -15,9 +17,11 @@ namespace ScoreOracleCSharp.Controllers
     public class SportController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public SportController(ApplicationDBContext context)
+        private readonly ISportRepository _sportRepository;
+        public SportController(ApplicationDBContext context, ISportRepository sportRepository)
         {
             _context = context;
+            _sportRepository = sportRepository;
         }
 
         /// <summary>
@@ -27,7 +31,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var sports = await _context.Sports.ToListAsync();
+            var sports = await _sportRepository.GetAllAsync();
         
             return Ok(sports);
         }
@@ -39,7 +43,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var sport = await _context.Sports.FindAsync(id);
+            var sport = await _sportRepository.GetByIdAsync(id);
 
             if(sport == null)
             {
@@ -61,15 +65,14 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("The sport name and abbreviation cannot be empty.");
             }
 
-            if (await SportExists(sportDto.Name, sportDto.Abbreviation))
+            if (await _sportRepository.SportExists(sportDto.Name, sportDto.Abbreviation))
             {
                 return BadRequest("A sport with the same name or abbreviation already exists.");
             }
 
             var newSport = SportMapper.ToSportFromCreateDTO(sportDto);
-            _context.Sports.Add(newSport);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newSport.Id }, SportMapper.ToSportDto(newSport));
+            var createdSport = await _sportRepository.CreateAsync(newSport);
+            return CreatedAtAction(nameof(GetById), new { id = createdSport.Id }, SportMapper.ToSportDto(createdSport));
         }
 
         /// <summary>
@@ -80,36 +83,18 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateSportDto sportDto)
         {
-            var sport = await _context.Sports.FindAsync(id);
-            if (sport == null)
-            {
-                return NotFound("Sport cannot be found.");
-            }
-
-            if (sportDto.Name.Length < 2)
-            {
-                return BadRequest("Sport name must be longer than one character.");
-            }
-
-            if (sportDto.Abbreviation.Length < 3)
-            {
-                return BadRequest("Abbreviation must be at least three characters long.");
-            }
-
-            bool nameOrAbbreviationExists = await _context.Sports
-                .AnyAsync(s => (s.Name == sportDto.Name || s.Abbreviation == sportDto.Abbreviation) && s.Id != id);
-            if (nameOrAbbreviationExists)
+            if (!await _sportRepository.SportExists(sportDto.Name, sportDto.Abbreviation))
             {
                 return BadRequest("A sport with the same name or abbreviation already exists.");
             }
 
-            sport.Name = sportDto.Name;
-            sport.Abbreviation = sportDto.Abbreviation;
-            sport.LogoURL = sportDto.LogoURL;
-            sport.League = sportDto.League;
+            var updatedSport = await _sportRepository.UpdateAsync(id, sportDto);
+            if (updatedSport == null)
+            {
+                return NotFound("Sport cannot be found.");
+            }
 
-            await _context.SaveChangesAsync();
-            return Ok(SportMapper.ToSportDto(sport));
+            return Ok(SportMapper.ToSportDto(updatedSport));
         }
 
         /// <summary>
@@ -120,20 +105,13 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var sport = await _context.Sports.FirstOrDefaultAsync(s => s.Id == id);
+            var sport = await _sportRepository.DeleteAsync(id);
             if(sport == null)
             {
                 return NotFound("Sport not found and could not be deleted");
             }
 
-            _context.Sports.Remove(sport);
-            await _context.SaveChangesAsync();
             return NoContent();
-        }
-        
-        private async Task<bool> SportExists(string name, string abbreviation)
-        {
-            return await _context.Sports.AnyAsync(s => s.Name == name || s.Abbreviation == abbreviation);
         }
 
     }

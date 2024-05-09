@@ -1,7 +1,6 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.User;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 using System.Threading.Tasks;
@@ -12,21 +11,19 @@ namespace ScoreOracleCSharp.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
+        private readonly IUserRepository _userRepository;
 
-        public UserController(UserManager<User> userManager, SignInManager<User> signInManager)
+        public UserController(IUserRepository userRepository)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _userRepository = userRepository;
         }
 
         // GET: api/user
         [HttpGet]
         public async Task<IActionResult> GetAllUsers() 
         {
-            var users = await _userManager.Users.ToListAsync();
-            var userDtos = users.Select(user => UserMapper.ToUserDto(user)).ToList();
+            var users = await _userRepository.GetAllUsersAsync();
+            var userDtos = users.ConvertAll(user => UserMapper.ToUserDto(user));
             return Ok(userDtos);
         }
 
@@ -34,7 +31,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -47,27 +44,28 @@ namespace ScoreOracleCSharp.Controllers
         public async Task<IActionResult> RegisterUser([FromBody] CreateUserRequestDto createUserDto)
         {
             var user = UserMapper.ToUserFromCreateDTO(createUserDto);
-            var result = await _userManager.CreateAsync(user, createUserDto.Password);
-
-            if (!result.Succeeded)
+            try
             {
-                return BadRequest(result.Errors);
+                var createdUser = await _userRepository.CreateUserAsync(user, createUserDto.Password);
+                return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, UserMapper.ToUserDto(createdUser));
             }
-
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, UserMapper.ToUserDto(user));
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: api/user/login
         [HttpPost("login")]
         public async Task<IActionResult> LoginUser([FromBody] LoginUserDto loginUserDto)
         {
-            var user = await _userManager.FindByEmailAsync(loginUserDto.Email);
+            var user = await _userRepository.GetUserByEmailAsync(loginUserDto.Email);
             if(user == null)
             {
                 return BadRequest("Invalid email or password");
             }
-            var result = await _signInManager.PasswordSignInAsync(user, loginUserDto.Password, false, false);
-            if(result.Succeeded)
+            var passwordValid = await _userRepository.CheckPasswordAsync(user, loginUserDto.Password);
+            if(passwordValid)
             {
                 var userDto = UserMapper.ToUserDto(user);
                 return Ok(userDto);
@@ -82,45 +80,42 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto userDto)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            // Update the user properties
-            user.UserName = userDto.Username;
-            user.Email = userDto.Email;
-            user.FirstName = userDto.FirstName;
-            user.LastName = userDto.LastName;
-            user.ProfilePictureUrl = userDto.ProfilePictureUrl;
+            user.UserName = userDto.Username ?? user.UserName;
+            user.Email = userDto.Email ?? user.Email;
+            user.FirstName = userDto.FirstName ?? user.FirstName;
+            user.LastName = userDto.LastName ?? user.LastName;
+            user.ProfilePictureUrl = userDto.ProfilePictureUrl ?? user.ProfilePictureUrl;
 
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
+            try
             {
-                return BadRequest(result.Errors);
+                var updatedUser = await _userRepository.UpdateUserAsync(user);
+                return Ok(UserMapper.ToUserDto(updatedUser));
             }
-
-            return Ok(UserMapper.ToUserDto(user));
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // DELETE: api/user/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
+            bool deleted = await _userRepository.DeleteUserAsync(id);
+            if (deleted)
             {
-                return NotFound();
+                return NoContent();
             }
-
-            var result = await _userManager.DeleteAsync(user);
-            if (!result.Succeeded)
+            else
             {
-                return BadRequest(result.Errors);
+                return NotFound("User not found.");
             }
-
-            return NoContent();
         }
 
         // Helper method to get authenticated user ID

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using ScoreOracleCSharp.Dtos.UserScore;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 using System;
@@ -11,32 +13,33 @@ namespace ScoreOracleCSharp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]  // Ensure the controller actions are protected
+    [Authorize]
     public class UserScoreController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public UserScoreController(ApplicationDBContext context)
+        private readonly IUserScoreRepository _scoreRepository;
+        public UserScoreController(ApplicationDBContext context, IUserScoreRepository scoreRepository)
         {
+            _scoreRepository = scoreRepository;
             _context = context;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var scores = await _context.UserScores.ToListAsync();
-            var scoreDtos = scores.Select(score => UserScoreMapper.ToUserScoreDto(score)).ToList();
-            return Ok(scoreDtos);
+            var score = await _scoreRepository.GetAllAsync();
+            return Ok(score);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var score = await _context.UserScores.FindAsync(id);
-            if (score == null)
+            var scores = await _scoreRepository.GetByIdAsync(id);
+            if (scores == null)
             {
                 return NotFound();
             }
-            return Ok(UserScoreMapper.ToUserScoreDto(score));
+            return Ok(scores);
         }
 
         [HttpPost]
@@ -48,66 +51,42 @@ namespace ScoreOracleCSharp.Controllers
                 return Unauthorized("You are not authorized to make predictions for other users.");
             }
             
-            if (!await UserExists(userId))
+            if (!await _scoreRepository.UserExists(userId))
             {
                 return BadRequest("User does not exist.");
             }
 
-            if (!await LeaderboardExists(userScoreDto.LeaderboardId))
+            if (!await _scoreRepository.LeaderboardExists(userScoreDto.LeaderboardId))
             {
                 return BadRequest("Leaderboard does not exist.");
             }
 
             var newUserScore = UserScoreMapper.ToUserScoreFromCreateDTO(userScoreDto);
-            _context.UserScores.Add(newUserScore);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newUserScore.Id }, UserScoreMapper.ToUserScoreDto(newUserScore));
+            var createdUserScore = await _scoreRepository.CreateAsync(newUserScore);
+            return CreatedAtAction(nameof(GetById), new { id = newUserScore.Id }, UserScoreMapper.ToUserScoreDto(createdUserScore));
         }
 
         [HttpPatch("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUserScoreDto userScoreDto)
         {
-            var userScore = await _context.UserScores.FindAsync(id);
-            if (userScore == null)
-            {
-                return NotFound();
-            }
-
             var userId = GetAuthenticatedUserId();
-            if (userScore.UserId != userId)
+            if(userScoreDto.UserId == userId)
             {
                 return Unauthorized("You are not authorized to update this score.");
             }
-
-            userScore.Score = userScoreDto.Score;
-            userScore.UpdatedLast = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return Ok(UserScoreMapper.ToUserScoreDto(userScore));
+            var updatedUserScore = await _scoreRepository.UpdateAsync(id, userScoreDto);
+            if(updatedUserScore == null)
+            {
+                return NotFound("User Scores cannot be found");
+            }
+            return Ok(UserScoreMapper.ToUserScoreDto(updatedUserScore));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var userId = GetAuthenticatedUserId();
-            var userScore = await _context.UserScores.FirstOrDefaultAsync(us => us.Id == id && us.UserId == userId);
-            if (userScore == null)
-            {
-                return NotFound("User score not found.");
-            }
-
-            _context.UserScores.Remove(userScore);
-            await _context.SaveChangesAsync();
+            await _scoreRepository.DeleteAsync(id);
             return NoContent();
-        }
-
-        private async Task<bool> UserExists(string userId) 
-        {
-            return await _context.Users.AnyAsync(u => u.Id == userId);
-        }
-        private async Task<bool> LeaderboardExists(int leaderboardId)
-        {
-            return await _context.Leaderboards.AnyAsync(l => l.Id == leaderboardId);
         }
         private string GetAuthenticatedUserId()
         {

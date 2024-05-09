@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Injury;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 
 namespace ScoreOracleCSharp.Controllers
@@ -14,8 +15,10 @@ namespace ScoreOracleCSharp.Controllers
     public class InjuryController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public InjuryController(ApplicationDBContext context)
+        private readonly IInjuryRepository _injuryRepository;
+        public InjuryController(ApplicationDBContext context, IInjuryRepository injuryRepository)
         {
+            _injuryRepository = injuryRepository;
             _context = context;
         }
 
@@ -26,7 +29,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var injuries = await _context.Injuries.ToListAsync();
+            var injuries = await _injuryRepository.GetAllAsync();
         
             return Ok(injuries);
         }
@@ -38,7 +41,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var injury = await _context.Injuries.FindAsync(id);
+            var injury = await _injuryRepository.GetByIdAsync(id);
 
             if(injury == null)
             {
@@ -55,25 +58,24 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateInjuryDto injuryDto)
         {
-            if(!await PlayerExists(injuryDto.PlayerId))
+            if(!await _injuryRepository.PlayerExists(injuryDto.PlayerId))
             {
                 return BadRequest("Player does not exist with that ID.");
             }
 
-            if(!await TeamExists(injuryDto.TeamId))
+            if(!await _injuryRepository.TeamExists(injuryDto.TeamId))
             {
                 return BadRequest("Team does not exist with that ID.");
             }
 
-            if(!await PlayerOnTeam(injuryDto.PlayerId, injuryDto.TeamId))
+            if(!await _injuryRepository.PlayerOnTeam(injuryDto.PlayerId, injuryDto.TeamId))
             {
                 return BadRequest("Player is not on that team");
             }
 
             var newInjury = InjuryMapper.ToInjuryFromCreateDTO(injuryDto);
-            _context.Injuries.Add(newInjury);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newInjury.Id }, InjuryMapper.ToInjuryDto(newInjury));
+            var createdInjury = await _injuryRepository.CreateAsync(newInjury);
+            return CreatedAtAction(nameof(GetById), new { id = newInjury.Id }, InjuryMapper.ToInjuryDto(createdInjury));
         }
 
         /// <summary>
@@ -84,36 +86,12 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateInjuryDto injuryDto)
         {
-            var injury = await _context.Injuries.FindAsync(id);
-            if (injury == null)
+            var updatedInjury = await _injuryRepository.UpdateAsync(id, injuryDto);
+            if(updatedInjury == null)
             {
-                return NotFound("Injury not found.");
+                return NotFound("Injury cannot be found or deleted");
             }
-
-            if (injuryDto.PlayerId.HasValue && !await _context.Players.AnyAsync(p => p.Id == injuryDto.PlayerId.Value))
-            {
-                return BadRequest("Player does not exist.");
-            }
-
-            if (injuryDto.TeamId.HasValue && !await _context.Teams.AnyAsync(t => t.Id == injuryDto.TeamId.Value))
-            {
-                return BadRequest("The team does not exist.");
-            }
-
-            if (injuryDto.PlayerId.HasValue)
-            {
-                injury.PlayerId = injuryDto.PlayerId.Value;
-            }
-
-            if (injuryDto.TeamId.HasValue)
-            {
-                injury.TeamId = injuryDto.TeamId.Value;
-            }
-
-            injury.Description = injuryDto.Description;
-
-            await _context.SaveChangesAsync();
-            return Ok(InjuryMapper.ToInjuryDto(injury));
+            return Ok(InjuryMapper.ToInjuryDto(updatedInjury));
         }
 
         /// <summary>
@@ -124,30 +102,8 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var injury = await _context.Injuries.FirstOrDefaultAsync(i => i.Id == id);
-            if(injury == null)
-            {
-                return NotFound("Injury not found and could not be deleted");
-            }
-
-            _context.Injuries.Remove(injury);
-            await _context.SaveChangesAsync();
+            await _injuryRepository.DeleteAsync(id);
             return NoContent();
-        }
-        
-        private async Task<bool> PlayerExists(int playerId)
-        {
-            return await _context.Players.AnyAsync(p => p.Id == playerId);
-        }
-
-        private async Task<bool> TeamExists(int teamId)
-        {
-            return await _context.Teams.AnyAsync(t => t.Id == teamId);
-        }
-
-        private async Task<bool> PlayerOnTeam(int playerId, int teamId)
-        {
-            return await _context.Players.AnyAsync(p => p.Id == playerId && p.TeamId == teamId);
         }
     }
 }

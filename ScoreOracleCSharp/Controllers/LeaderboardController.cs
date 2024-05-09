@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Leaderboard;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 
@@ -14,9 +15,11 @@ namespace ScoreOracleCSharp.Controllers
     [Route("api/[controller]")]
     public class LeaderboardController : ControllerBase
     {
+        private readonly ILeaderboardRepository _leaderboardRepository;
         private readonly ApplicationDBContext _context;
-        public LeaderboardController(ApplicationDBContext context)
+        public LeaderboardController(ApplicationDBContext context, ILeaderboardRepository leaderboardRepository)
         {
+            _leaderboardRepository = leaderboardRepository;
             _context = context;
         }
 
@@ -27,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var leaderboards = await _context.Leaderboards.ToListAsync();
+            var leaderboards = await _leaderboardRepository.GetAllAsync();
         
             return Ok(leaderboards);
         }
@@ -39,7 +42,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var leaderboard = await _context.Leaderboards.FindAsync(id);
+            var leaderboard = await _leaderboardRepository.GetByIdAsync(id);
 
             if(leaderboard == null)
             {
@@ -56,57 +59,43 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLeaderboardDto leaderboardDto)
         {
-            if(!await SportExists(leaderboardDto.SportId))
+            if(!await _leaderboardRepository.SportExists(leaderboardDto.SportId))
             {
                 return BadRequest("Sport does not exist with that ID.");
             }
 
             var newLeaderboard = LeaderboardMapper.ToLeaderboardFromCreateDTO(leaderboardDto);
-            _context.Leaderboards.Add(newLeaderboard);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newLeaderboard.Id }, LeaderboardMapper.ToLeaderboardDto(newLeaderboard));
+            var createdLeaderboard = await _leaderboardRepository.CreateAsync(newLeaderboard);
+            return CreatedAtAction(nameof(GetById), new { id = newLeaderboard.Id }, LeaderboardMapper.ToLeaderboardDto(createdLeaderboard));
         }
 
         /// <summary>
         /// Updates a leaderboard in the database
         /// </summary>
         /// <returns>The updated leaderboard</returns>
-        [HttpPatch("{id}")]
+        [HttpPatch]
+        [Route("{id}")]
         public async Task<IActionResult> UpdateLeaderboard([FromRoute] int id, [FromBody] UpdateLeaderboardDto updateDto)
         {
-            var leaderboard = await _context.Leaderboards.FindAsync(id);
-            if (leaderboard == null)
+            try
             {
-                return NotFound("Leaderboard not found.");
-            }
+                var updatedLeaderboard = await _leaderboardRepository.UpdateAsync(id, updateDto);
+                if (updatedLeaderboard == null)
+                {
+                    return NotFound("Leaderboard not found.");
+                }
 
-            if (updateDto.Name != null)
-            {
-                leaderboard.Name = updateDto.Name;
+                return Ok(LeaderboardMapper.ToLeaderboardDto(updatedLeaderboard));
             }
-
-            if (!string.IsNullOrWhiteSpace(updateDto.Type) && Enum.TryParse<LeaderboardType>(updateDto.Type, true, out var parsedType))
+            catch (ArgumentException ex)
             {
-                leaderboard.Type = parsedType;
+                return BadRequest(ex.Message);
             }
-            else if (!string.IsNullOrWhiteSpace(updateDto.Type))
+            catch (InvalidOperationException ex)
             {
-                return BadRequest("Invalid leaderboard type specified.");
+                return BadRequest(ex.Message);
             }
-
-            if (updateDto.SportId.HasValue && !await SportExists(updateDto.SportId.Value))
-            {
-                return BadRequest("Specified sport does not exist.");
-            }
-            else if (updateDto.SportId.HasValue)
-            {
-                leaderboard.SportId = updateDto.SportId.Value;
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok(LeaderboardMapper.ToLeaderboardDto(leaderboard));
         }
-
         /// <summary>
         /// Deletes a leaderboard in the database
         /// </summary>
@@ -115,20 +104,8 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var leaderboard = await _context.Leaderboards.FirstOrDefaultAsync(l => l.Id == id);
-            if(leaderboard == null)
-            {
-                return NotFound("Leaderboard not found and could not be deleted");
-            }
-
-            _context.Leaderboards.Remove(leaderboard);
-            await _context.SaveChangesAsync();
+            await _leaderboardRepository.DeleteAsync(id);
             return NoContent();
-        }
-
-        private async Task<bool> SportExists(int sportId)
-        {
-            return await _context.Sports.AnyAsync(s => s.Id == sportId);
         }
     }
 }

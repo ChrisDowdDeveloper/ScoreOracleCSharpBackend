@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Player;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 
@@ -15,8 +16,10 @@ namespace ScoreOracleCSharp.Controllers
     public class PlayerController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public PlayerController(ApplicationDBContext context)
+        private readonly IPlayerRepository _playerRepository;
+        public PlayerController(ApplicationDBContext context, IPlayerRepository playerRepository)
         {
+            _playerRepository = playerRepository;
             _context = context;
         }
 
@@ -27,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var players = await _context.Players.ToListAsync();
+            var players = await _playerRepository.GetAllAsync();
         
             return Ok(players);
         }
@@ -39,7 +42,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var player = await _context.Players.FindAsync(id);
+            var player = await _playerRepository.GetByIdAsync(id);
 
             if(player == null)
             {
@@ -62,15 +65,14 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("Player name cannot be empty.");
             }
 
-            if(!await TeamExists(playerDto.TeamId))
+            if(!await _playerRepository.TeamExists(playerDto.TeamId))
             {
                 return BadRequest("Team does not exist with that ID");
             }
 
             var newPlayer = PlayerMapper.ToPlayerFromCreateDTO(playerDto);
-            _context.Players.Add(newPlayer);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newPlayer.Id }, PlayerMapper.ToPlayerDto(newPlayer));
+            var createdPlayer = await _playerRepository.CreateAsync(newPlayer);
+            return CreatedAtAction(nameof(GetById), new { id = newPlayer.Id }, PlayerMapper.ToPlayerDto(createdPlayer));
         }
 
         /// <summary>
@@ -81,40 +83,20 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePlayerDto playerDto)
         {
-            var player = await _context.Players.Include(p => p.PlayerInjury).FirstOrDefaultAsync(p => p.Id == id);
-            if(player == null)
+            try
             {
-                return NotFound();
-            }
+                var updatedPlayer = await _playerRepository.UpdateAsync(id, playerDto);
+                if (updatedPlayer == null)
+                {
+                    return NotFound("Player not found.");
+                }
 
-            if(playerDto.TeamId.HasValue && !await TeamExists(playerDto.TeamId.Value))
-            {
-                return BadRequest("Team does not exist");
-            } 
-            else if(playerDto.TeamId.HasValue)
-            {
-                player.TeamId = playerDto.TeamId.Value;
+                return Ok(PlayerMapper.ToPlayerDto(updatedPlayer));
             }
-
-            player.FirstName = playerDto.FirstName;
-            player.LastName = playerDto.LastName;
-            player.Position = playerDto.Position;
-
-            if(playerDto.IsInjured && !player.PlayerInjury.Any())
+            catch (InvalidOperationException ex)
             {
-                player.PlayerInjury.Add(new Injury { 
-                    PlayerId = player.Id,
-                    Description = "This player is injured, please update accordingly",
-                    TeamId = player.TeamId
-                });
+                return BadRequest(ex.Message);
             }
-            else if (!playerDto.IsInjured)
-            {
-                player.PlayerInjury.Clear();
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok(PlayerMapper.ToPlayerDto(player));
         }
 
         /// <summary>
@@ -125,20 +107,8 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var player = await _context.Players.FirstOrDefaultAsync(p => p.Id == id);
-            if(player == null)
-            {
-                return NotFound("Player not found and could not be deleted");
-            }
-
-            _context.Players.Remove(player);
-            await _context.SaveChangesAsync();
+            await _playerRepository.DeleteAsync(id);
             return NoContent();
-        }
-
-        private async Task<bool> TeamExists(int teamId)
-        {
-            return await _context.Teams.AnyAsync(t => t.Id == teamId);
         }
     }
 }

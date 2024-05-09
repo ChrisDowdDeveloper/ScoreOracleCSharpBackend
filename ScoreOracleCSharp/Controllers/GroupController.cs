@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Group;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 
 namespace ScoreOracleCSharp.Controllers
@@ -15,8 +16,10 @@ namespace ScoreOracleCSharp.Controllers
     public class GroupController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public GroupController(ApplicationDBContext context)
+        private readonly IGroupRepository _groupRepository;
+        public GroupController(ApplicationDBContext context, IGroupRepository groupRepository)
         {
+            _groupRepository = groupRepository;
             _context = context;
         }
 
@@ -27,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var groups = await _context.Groups.ToListAsync();
+            var groups = await _groupRepository.GetAllAsync();
         
             return Ok(groups);
         }
@@ -39,7 +42,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var group = await _context.Users.FindAsync(id);
+            var group = await _groupRepository.GetByIdAsync(id);
 
             if(group == null)
             {
@@ -57,20 +60,20 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateGroupDto groupDto)
         {
-            if (!await UserExists(groupDto.CreatedByUserId))
+            if (!await _groupRepository.UserExists(groupDto.CreatedByUserId))
             {
                 return BadRequest("Invalid user ID.");
             }
 
-            if (groupDto.CreatedByUserId != GetAuthenticatedUserId())
+            var userId = GetAuthenticatedUserId();
+            if (userId == null)
             {
-                return Unauthorized("You are not authorized to create a group for another user.");
+                return Unauthorized("You are not authorized to create a group.");
             }
 
             var newGroup = GroupMapper.ToGroupFromCreateDTO(groupDto);
-            _context.Groups.Add(newGroup);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newGroup.Id }, GroupMapper.ToGroupDto(newGroup));
+            var createdGroup = await _groupRepository.CreateAsync(newGroup);
+            return CreatedAtAction(nameof(GetById), new { id = newGroup.Id }, GroupMapper.ToGroupDto(createdGroup));
         }
 
         /// <summary>
@@ -88,7 +91,7 @@ namespace ScoreOracleCSharp.Controllers
             }
 
             var userId = GetAuthenticatedUserId();
-            if (group.CreatedByUserId != userId)
+            if (!await _groupRepository.UserCanModifyGroup(userId, id))
             {
                 return Unauthorized("You do not have permission to update this group.");
             }
@@ -98,11 +101,14 @@ namespace ScoreOracleCSharp.Controllers
                 return BadRequest("Group name must have at least 3 characters and cannot be empty.");
             }
 
-            group.Name = groupDto.Name.Trim(); 
+            var updatedGroup = await _groupRepository.UpdateAsync(id, groupDto);
 
-            group.Name = groupDto.Name;
-            await _context.SaveChangesAsync();
-            return Ok(GroupMapper.ToGroupDto(group));
+            if(updatedGroup == null)
+            {
+                return NotFound("Group cannot be found.");
+            }
+
+            return Ok(GroupMapper.ToGroupDto(updatedGroup));
         }
 
         /// <summary>
@@ -113,25 +119,14 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == id);
-            if(group == null)
-            {
-                return NotFound("Group could not be found or deleted.");
-            }
-
             var userId = GetAuthenticatedUserId();
-            if (group.CreatedByUserId != userId)
+            if(!await _groupRepository.UserCanModifyGroup(userId, id))
             {
-                return Unauthorized("You do not have permission to delete this group.");
+                return Unauthorized("You do not have permission to delete this group");
             }
 
-            _context.Groups.Remove(group);
-            await _context.SaveChangesAsync();
+            await _groupRepository.DeleteAsync(id);
             return NoContent();
-        }        
-        private async Task<bool> UserExists(string userId) 
-        {
-            return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
         private string GetAuthenticatedUserId()

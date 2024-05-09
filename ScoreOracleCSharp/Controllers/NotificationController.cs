@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using ScoreOracleCSharp.Dtos.Notification;
+using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 
@@ -16,8 +17,10 @@ namespace ScoreOracleCSharp.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public NotificationController(ApplicationDBContext context)
+        private readonly INotificationRepository _notificationRepository;
+        public NotificationController(ApplicationDBContext context, INotificationRepository notificationRepository)
         {
+            _notificationRepository = notificationRepository;
             _context = context;
         }
 
@@ -28,7 +31,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() 
         {
-            var notifications = await _context.Notifications.ToListAsync();
+            var notifications = await _notificationRepository.GetAllAsync();
         
             return Ok(notifications);
         }
@@ -40,7 +43,7 @@ namespace ScoreOracleCSharp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var notification = await _context.Notifications.FindAsync(id);
+            var notification = await _notificationRepository.GetByIdAsync(id);
 
             if(notification == null)
             {
@@ -57,15 +60,14 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateNotificationDto notificationDto)
         {
-            if(!await UserExists(notificationDto.UserId))
+            if(!await _notificationRepository.UserExists(notificationDto.UserId))
             {
                 return BadRequest("No user exists with that ID");
             }
 
             var newNotification = NotificationMapper.ToNotificationFromCreateDTO(notificationDto);
-            _context.Notifications.Add(newNotification);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = newNotification.Id }, NotificationMapper.ToNotificationDto(newNotification));
+            var createdNotification = await _notificationRepository.CreateAsync(newNotification);
+            return CreatedAtAction(nameof(GetById), new { id = newNotification.Id }, NotificationMapper.ToNotificationDto(createdNotification));
         }
 
         /// <summary>
@@ -76,46 +78,23 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateNotificationDto notificationDto)
         {
-            var notification = await _context.Notifications.FindAsync(id);
-            if (notification == null)
-            {
-                return NotFound("Notification not found.");
-            }
-
-            if (!await UserExists(notificationDto.UserId))
+            if (!await _notificationRepository.UserExists(notificationDto.UserId))
             {
                 return BadRequest("User does not exist with that ID");
             }
-            notification.UserId = notificationDto.UserId;
 
-            if (!string.IsNullOrWhiteSpace(notificationDto.Type))
+            var userId = GetAuthenticatedUserId();
+            if(!await _notificationRepository.UserCanModifyNotification(userId, id))
             {
-                if (Enum.TryParse<NotificationType>(notificationDto.Type, true, out var parsedType))
-                {
-                    notification.Type = parsedType;
-                }
-                else
-                {
-                    return BadRequest("Invalid notification type specified.");
-                }
+                return Unauthorized("You do not have permission to update this notification.");
             }
 
-            if (!string.IsNullOrWhiteSpace(notificationDto.Content))
+            var updatedNotification = await _notificationRepository.UpdateAsync(id, notificationDto);
+            if(updatedNotification == null)
             {
-                if (notificationDto.Content.Length <= 1)
-                {
-                    return BadRequest("Notification must contain content.");
-                }
-                notification.Content = notificationDto.Content;
+                return NotFound("Notification cannot be found");
             }
-
-            if (notificationDto.IsRead.HasValue)
-            {
-                notification.IsRead = notificationDto.IsRead.Value;
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok(NotificationMapper.ToNotificationDto(notification));
+            return Ok(NotificationMapper.ToNotificationDto(updatedNotification));
         }
 
         /// <summary>
@@ -126,21 +105,19 @@ namespace ScoreOracleCSharp.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id);
-            if(notification == null)
+            var userId = GetAuthenticatedUserId();
+            if(!await _notificationRepository.UserCanModifyNotification(userId, id))
             {
-                return NotFound("Notification not found and could not be deleted");
+                return Unauthorized("You do not have permission to delete this notification.");
             }
-
-            _context.Notifications.Remove(notification);
-            await _context.SaveChangesAsync();
+            await _notificationRepository.DeleteAsync(id);
             return NoContent();
         }
 
-        private async Task<bool> UserExists(string userId) 
+        private string GetAuthenticatedUserId()
         {
-            return await _context.Users.AnyAsync(u => u.Id == userId);
+            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");
         }
+
     }
 }
