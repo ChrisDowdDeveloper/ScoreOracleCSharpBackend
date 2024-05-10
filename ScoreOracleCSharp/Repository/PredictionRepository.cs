@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Prediction;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -41,9 +42,14 @@ namespace ScoreOracleCSharp.Repository
             return await _context.Games.AnyAsync(g => g.Id == gameId);
         }
 
-        public async Task<List<Prediction>> GetAllAsync()
+        public async Task<List<Prediction>> GetAllAsync(PredictionQueryObject query)
         {
-            return await _context.Predictions.ToListAsync();
+            var predictions = _context.Predictions.Include(p => p.User).AsQueryable();
+            if(!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                predictions = predictions.Where(p => p.User != null && p.User.UserName != null && p.User.UserName.Contains(query.UserName));
+            }
+            return await predictions.ToListAsync();
         }
 
         public async Task<Prediction?> GetByIdAsync(int id)

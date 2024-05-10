@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Player;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -38,9 +39,27 @@ namespace ScoreOracleCSharp.Repository
             return player;
         }
 
-        public async Task<List<Player>> GetAllAsync()
+        public async Task<List<Player>> GetAllAsync(PlayerQueryObject query)
         {
-            return await _context.Players.ToListAsync();
+            var players = _context.Players.Include(p => p.Team).AsQueryable();
+
+            if(!string.IsNullOrWhiteSpace(query.PlayerName))
+            {
+                string playerName = query.PlayerName.ToLower();
+                players = players.Where(p => ((p.FirstName ?? "") + " " + (p.LastName ?? "")).ToLower().Contains(playerName));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.Position))
+            {
+                players = players.Where(p => p.Position.Contains(query.Position));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.TeamName))
+            {
+                players = players.Where(p => p.Team != null && p.Team.Name.Contains(query.TeamName));
+            }
+
+            return await players.ToListAsync();
         }
 
         public async Task<Player?> GetByIdAsync(int id)

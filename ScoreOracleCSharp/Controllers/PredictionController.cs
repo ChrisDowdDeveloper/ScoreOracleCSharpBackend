@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Prediction;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -29,9 +30,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of predictions</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(PredictionQueryObject query) 
         {
-            var predictions = await _predictionRepository.GetAllAsync();
+            var predictions = await _predictionRepository.GetAllAsync(query);
         
             return Ok(predictions);
         }
@@ -40,7 +41,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a prediction in the database.
         /// </summary>
         /// <returns>A specific prediction</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var prediction = await _predictionRepository.GetByIdAsync(id);
@@ -85,7 +86,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated prediction</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePredictionDto predictionDto)
         {
             var userId = GetAuthenticatedUserId();
@@ -113,7 +114,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetAuthenticatedUserId();

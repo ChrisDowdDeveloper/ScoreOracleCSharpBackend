@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using ScoreOracleCSharp.Dtos.Notification;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -29,9 +30,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of notifications</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(NotificationQueryObject query) 
         {
-            var notifications = await _notificationRepository.GetAllAsync();
+            var notifications = await _notificationRepository.GetAllAsync(query);
         
             return Ok(notifications);
         }
@@ -40,7 +41,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a notification in the database.
         /// </summary>
         /// <returns>A specific notification</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var notification = await _notificationRepository.GetByIdAsync(id);
@@ -75,7 +76,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated notification</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateNotificationDto notificationDto)
         {
             if (!await _notificationRepository.UserExists(notificationDto.UserId))
@@ -102,7 +103,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetAuthenticatedUserId();

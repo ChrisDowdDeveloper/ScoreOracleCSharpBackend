@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ScoreOracleCSharp.Dtos.User;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -20,9 +21,9 @@ namespace ScoreOracleCSharp.Controllers
 
         // GET: api/user
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers() 
+        public async Task<IActionResult> GetAllUsers(UserQueryObject query) 
         {
-            var users = await _userRepository.GetAllUsersAsync();
+            var users = await _userRepository.GetAllUsersAsync(query);
             var userDtos = users.ConvertAll(user => UserMapper.ToUserDto(user));
             return Ok(userDtos);
         }

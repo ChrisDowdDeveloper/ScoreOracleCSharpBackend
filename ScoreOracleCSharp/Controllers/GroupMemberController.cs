@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.GroupMember;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -29,9 +30,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of group members</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(GroupMemberQueryObject query) 
         {
-            var members = await _memberRepository.GetAllAsync();
+            var members = await _memberRepository.GetAllAsync(query);
         
             return Ok(members);
         }
@@ -40,7 +41,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a group member in the database.
         /// </summary>
         /// <returns>A specific group member</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var member = await _memberRepository.GetByIdAsync(id);
@@ -57,7 +58,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Creates a group member in the database
         /// </summary>
         /// <returns>The created group member</returns>
-        [HttpPost("{groupId}/members")]
+        [HttpPost("{groupId:int}/members")]
         public async Task<IActionResult> AddMember(int groupId, [FromBody] CreateGroupMemberDto memberDto)
         { 
             var userId = GetAuthenticatedUserId();
@@ -82,7 +83,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Deletes a group member in the database
         /// </summary>
         /// <returns>No Content</returns>
-        [HttpDelete("{groupId}/members/{memberId}")]
+        [HttpDelete("{groupId:int}/members/{memberId:int}")]
         public async Task<IActionResult> RemoveMember(int groupId, int memberId)
         {
             var userId = GetAuthenticatedUserId();

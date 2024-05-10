@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ScoreOracleCSharp.Dtos.Sport;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Repository;
@@ -29,9 +30,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of sports</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll([FromQuery] SportQueryObject query) 
         {
-            var sports = await _sportRepository.GetAllAsync();
+            var sports = await _sportRepository.GetAllAsync(query);
         
             return Ok(sports);
         }
@@ -40,7 +41,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a sport in the database.
         /// </summary>
         /// <returns>A specific sport</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var sport = await _sportRepository.GetByIdAsync(id);
@@ -80,7 +81,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated sport</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateSportDto sportDto)
         {
             if (!await _sportRepository.SportExists(sportDto.Name, sportDto.Abbreviation))
@@ -102,7 +103,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var sport = await _sportRepository.DeleteAsync(id);

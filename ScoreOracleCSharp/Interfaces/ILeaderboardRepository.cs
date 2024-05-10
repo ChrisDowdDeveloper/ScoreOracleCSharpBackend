@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Leaderboard;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface ILeaderboardRepository
     {
-        Task<List<Leaderboard>> GetAllAsync();
+        Task<List<Leaderboard>> GetAllAsync(LeaderboardQueryObject query);
         Task<Leaderboard?> GetByIdAsync(int id);
         Task <Leaderboard> CreateAsync(Leaderboard leaderboardModel);
         Task<Leaderboard?> UpdateAsync(int id, UpdateLeaderboardDto leaderboardDto);

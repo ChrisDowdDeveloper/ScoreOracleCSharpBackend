@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 using System.Collections.Generic;
@@ -15,9 +16,14 @@ public class UserRepository : IUserRepository
         _userManager = userManager;
     }
 
-    public async Task<List<User>> GetAllUsersAsync()
+    public async Task<List<User>> GetAllUsersAsync(UserQueryObject query)
     {
-        return await _userManager.Users.ToListAsync();
+        var users = _userManager.Users.AsQueryable();
+        if(!string.IsNullOrWhiteSpace(query.UserName))
+        {
+            users = users.Where(u => u.UserName != null && u.UserName.Contains(query.UserName));
+        }
+        return await users.ToListAsync();
     }
 
     public async Task<User> GetUserByIdAsync(string userId)

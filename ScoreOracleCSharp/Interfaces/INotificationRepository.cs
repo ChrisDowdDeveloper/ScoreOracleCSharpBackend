@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Notification;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface INotificationRepository
     {
-        Task<List<Notification>> GetAllAsync();
+        Task<List<Notification>> GetAllAsync(NotificationQueryObject query);
         Task<Notification?> GetByIdAsync(int id);
         Task<Notification> CreateAsync(Notification notificationModel);
         Task<Notification?> UpdateAsync(int id, UpdateNotificationDto notificationDto);

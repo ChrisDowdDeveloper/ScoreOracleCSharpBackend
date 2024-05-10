@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using ScoreOracleCSharp.Dtos.UserScore;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -25,13 +26,13 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(UserScoreQueryObject query) 
         {
-            var score = await _scoreRepository.GetAllAsync();
+            var score = await _scoreRepository.GetAllAsync(query);
             return Ok(score);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var scores = await _scoreRepository.GetByIdAsync(id);
@@ -66,7 +67,7 @@ namespace ScoreOracleCSharp.Controllers
             return CreatedAtAction(nameof(GetById), new { id = newUserScore.Id }, UserScoreMapper.ToUserScoreDto(createdUserScore));
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUserScoreDto userScoreDto)
         {
             var userId = GetAuthenticatedUserId();
@@ -82,7 +83,7 @@ namespace ScoreOracleCSharp.Controllers
             return Ok(UserScoreMapper.ToUserScoreDto(updatedUserScore));
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             await _scoreRepository.DeleteAsync(id);

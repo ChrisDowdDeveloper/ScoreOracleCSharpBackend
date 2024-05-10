@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Player;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface IPlayerRepository
     {
-        Task<List<Player>> GetAllAsync();
+        Task<List<Player>> GetAllAsync(PlayerQueryObject query);
         Task<Player?> GetByIdAsync(int id);
         Task<Player> CreateAsync(Player playerModel);
         Task<Player?> UpdateAsync(int id, UpdatePlayerDto playerDto);

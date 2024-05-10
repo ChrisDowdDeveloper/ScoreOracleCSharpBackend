@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using ScoreOracleCSharp.Dtos.Friendship;
 using ScoreOracleCSharp.Dtos.User;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -43,7 +44,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a friendship in the database.
         /// </summary>
         /// <returns>A specific friendship</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var friendship = await _friendshipRepository.GetByIdAsync(id);
@@ -80,7 +81,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated friendship</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateFriendshipDto friendshipDto)
         {
 
@@ -109,7 +110,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetAuthenticatedUserId();

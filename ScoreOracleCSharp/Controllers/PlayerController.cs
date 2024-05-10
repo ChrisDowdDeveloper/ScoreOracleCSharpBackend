@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Player;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -28,9 +29,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of players</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(PlayerQueryObject query) 
         {
-            var players = await _playerRepository.GetAllAsync();
+            var players = await _playerRepository.GetAllAsync(query);
         
             return Ok(players);
         }
@@ -39,7 +40,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a player in the database.
         /// </summary>
         /// <returns>A specific player</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var player = await _playerRepository.GetByIdAsync(id);
@@ -80,7 +81,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated player</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePlayerDto playerDto)
         {
             try
@@ -104,7 +105,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             await _playerRepository.DeleteAsync(id);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Sport;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -37,9 +38,25 @@ namespace ScoreOracleCSharp.Repository
             return sport;
         }
 
-        public async Task<List<Sport>> GetAllAsync()
+        public async Task<List<Sport>> GetAllAsync(SportQueryObject query)
         {
-            return await _context.Sports.ToListAsync();
+            var sports = _context.Sports.AsQueryable();
+            if(!string.IsNullOrWhiteSpace(query.Name))
+            {
+                sports = sports.Where(s => s.Name.Contains(query.Name));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.League))
+            {
+                sports = sports.Where(s => s.League.Contains(query.League));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.Abbreviation))
+            {
+                sports = sports.Where(s => s.Abbreviation.Contains(query.Abbreviation));
+            }
+
+            return await sports.ToListAsync();
         }
 
         public async Task<Sport?> GetByIdAsync(int id)

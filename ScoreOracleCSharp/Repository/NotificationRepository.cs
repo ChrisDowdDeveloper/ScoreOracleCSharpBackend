@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Notification;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -36,9 +37,34 @@ namespace ScoreOracleCSharp.Repository
             return notification;
         }
 
-        public async Task<List<Notification>> GetAllAsync()
+        public async Task<List<Notification>> GetAllAsync(NotificationQueryObject query)
         {
-            return await _context.Notifications.ToListAsync();
+            var notifications = _context.Notifications.Include(n => n.User).AsQueryable();
+            // Username
+            if(!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                notifications = notifications.Where(n => n.User != null && n.User.UserName != null && n.User.UserName.Contains(query.UserName));
+            }
+            // Type
+            if (!string.IsNullOrWhiteSpace(query.Type))
+            {
+                var typeStr = query.Type.ToUpper();
+                if (Enum.TryParse<NotificationType>(query.Type, out var typeEnum))
+                {
+                    notifications = notifications.Where(n => n.Type == typeEnum);
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid notification type specified");
+                }
+            }
+            // IsRead
+            if(query.IsRead)
+            {
+                notifications = notifications.Where(n => n.IsRead == query.IsRead);
+            }
+
+            return await notifications.ToListAsync();
         }
 
         public async Task<Notification?> GetByIdAsync(int id)

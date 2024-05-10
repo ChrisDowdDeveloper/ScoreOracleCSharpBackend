@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Game;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -36,9 +37,45 @@ namespace ScoreOracleCSharp.Repository
             return game;
         }
 
-        public async Task<List<Game>> GetAllAsync()
+        public async Task<List<Game>> GetAllAsync(GameQueryObject query)
         {
-            return await _context.Games.ToListAsync();
+            var games = _context.Games
+                                .Include(g => g.HomeTeam)
+                                .Include(g => g.AwayTeam)
+                                .Include(g => g.Sport)
+                                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.TeamName))
+            {
+                games = games.Where(g => 
+                    (g.HomeTeam != null && g.HomeTeam.Name.Contains(query.TeamName)) || 
+                    (g.AwayTeam != null && g.AwayTeam.Name.Contains(query.TeamName))
+                );
+            }
+
+            if (query.GameDate.Equals(DateOnly.FromDateTime(DateTime.Today)))
+            {
+                games = games.Where(g => g.GameDate == query.GameDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SportName))
+            {
+                games = games.Where(g => g.Sport != null && g.Sport.Name.Contains(query.SportName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.GameStatus))
+            {
+                if (Enum.TryParse<GameStatus>(query.GameStatus, true, out var status))
+                {
+                    games = games.Where(g => g.GameStatus == status);
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid game status value");
+                }
+            }
+
+            return await games.ToListAsync();
         }
 
         public async Task<Game?> GetByIdAsync(int id)

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Group;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 
@@ -28,9 +29,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of groups</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(GroupQueryObject query) 
         {
-            var groups = await _groupRepository.GetAllAsync();
+            var groups = await _groupRepository.GetAllAsync(query);
         
             return Ok(groups);
         }
@@ -39,7 +40,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a group in the database.
         /// </summary>
         /// <returns>A specific group</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var group = await _groupRepository.GetByIdAsync(id);
@@ -81,7 +82,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated friendship</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateGroupDto groupDto)
         {
             var group = await _context.Groups.FindAsync(id);
@@ -116,7 +117,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetAuthenticatedUserId();

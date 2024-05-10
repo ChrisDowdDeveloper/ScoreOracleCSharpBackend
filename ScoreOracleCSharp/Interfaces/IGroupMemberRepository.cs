@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface IGroupMemberRepository
     {
-        Task<List<GroupMember>> GetAllAsync();
+        Task<List<GroupMember>> GetAllAsync(GroupMemberQueryObject query);
         Task<GroupMember?> GetByIdAsync(int id);
         Task<GroupMember> CreateAsync(GroupMember groupMemberModel);
         Task<GroupMember?> DeleteAsync(int id);

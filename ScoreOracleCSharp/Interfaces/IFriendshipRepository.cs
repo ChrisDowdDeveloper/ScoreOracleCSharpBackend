@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Friendship;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces

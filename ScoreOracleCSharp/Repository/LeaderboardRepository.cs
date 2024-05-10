@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Leaderboard;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -37,9 +38,23 @@ namespace ScoreOracleCSharp.Repository
             return leaderboard;
         }
 
-        public async Task<List<Leaderboard>> GetAllAsync()
+        public async Task<List<Leaderboard>> GetAllAsync(LeaderboardQueryObject query)
         {
-            return await _context.Leaderboards.ToListAsync();
+            var leaderboards = _context.Leaderboards.Include(l => l.Sport).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Name))
+            {
+                leaderboards = leaderboards.Where(l => l.Name.Contains(query.Name));
+            }
+
+            leaderboards = leaderboards.Where(l => l.Type == LeaderboardType.PUBLIC);
+
+            if (!string.IsNullOrWhiteSpace(query.SportName))
+            {
+                leaderboards = leaderboards.Where(l => l.Sport != null && l.Sport.Name.Contains(query.SportName));
+            }
+
+            return await leaderboards.ToListAsync();
         }
 
         public async Task<Leaderboard?> GetByIdAsync(int id)

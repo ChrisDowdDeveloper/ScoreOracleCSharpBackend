@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Injury;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface IInjuryRepository
     {
-        Task<List<Injury>> GetAllAsync();
+        Task<List<Injury>> GetAllAsync(InjuryQueryObject query);
         Task<Injury?> GetByIdAsync(int id);
         Task<Injury> CreateAsync(Injury injuryModel);
         Task<Injury?> UpdateAsync(int id, UpdateInjuryDto injuryDto);

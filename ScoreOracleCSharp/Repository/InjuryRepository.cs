@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Injury;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -36,9 +37,18 @@ namespace ScoreOracleCSharp.Repository
             return injury;
         }
 
-        public async Task<List<Injury>> GetAllAsync()
+        public async Task<List<Injury>> GetAllAsync(InjuryQueryObject query)
         {
-            return await _context.Injuries.ToListAsync();
+            var injuries = _context.Injuries.Include(i => i.Player).Include(i => i.Team).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(query.PlayerName))
+            {
+                string playerNameLower = query.PlayerName.ToLower();
+                injuries = injuries.Where(i => 
+                    i.Player != null && 
+                    ((i.Player.FirstName ?? "") + " " + (i.Player.LastName ?? "")).ToLower().Contains(playerNameLower));
+            }
+
+            return await injuries.ToListAsync();
         }
 
         public async Task<Injury?> GetByIdAsync(int id)

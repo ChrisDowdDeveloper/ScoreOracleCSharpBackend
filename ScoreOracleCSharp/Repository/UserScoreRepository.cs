@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.UserScore;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -35,9 +36,16 @@ namespace ScoreOracleCSharp.Repository
             return userScore;
         }
 
-        public async Task<List<UserScore>> GetAllAsync()
+        public async Task<List<UserScore>> GetAllAsync(UserScoreQueryObject query)
         {
-            return await _context.UserScores.ToListAsync();
+            var userScore = _context.UserScores.Include(us => us.User).AsQueryable();
+            
+            if(!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                userScore = userScore.Where(us => us.User != null && us.User.UserName != null && us.User.UserName.Contains(query.UserName));
+            }
+
+            return await userScore.ToListAsync();
         }
 
         public async Task<UserScore?> GetByIdAsync(int id)

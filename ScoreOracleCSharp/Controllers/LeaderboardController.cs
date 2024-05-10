@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Leaderboard;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
@@ -28,9 +29,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of leaderboards</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(LeaderboardQueryObject query) 
         {
-            var leaderboards = await _leaderboardRepository.GetAllAsync();
+            var leaderboards = await _leaderboardRepository.GetAllAsync(query);
         
             return Ok(leaderboards);
         }
@@ -39,7 +40,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves a leaderboard in the database.
         /// </summary>
         /// <returns>A specific leaderboard</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var leaderboard = await _leaderboardRepository.GetByIdAsync(id);
@@ -74,7 +75,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated leaderboard</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> UpdateLeaderboard([FromRoute] int id, [FromBody] UpdateLeaderboardDto updateDto)
         {
             try
@@ -101,7 +102,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             await _leaderboardRepository.DeleteAsync(id);

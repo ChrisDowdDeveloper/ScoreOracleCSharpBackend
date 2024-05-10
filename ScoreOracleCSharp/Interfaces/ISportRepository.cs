@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ScoreOracleCSharp.Dtos.Sport;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Interfaces
 {
     public interface ISportRepository
     {
-        Task<List<Sport>> GetAllAsync();
+        Task<List<Sport>> GetAllAsync(SportQueryObject query);
         Task<Sport?> GetByIdAsync(int id);
         Task<Sport> CreateAsync(Sport sportModel);
         Task<Sport?> UpdateAsync(int id, UpdateSportDto sportDto);

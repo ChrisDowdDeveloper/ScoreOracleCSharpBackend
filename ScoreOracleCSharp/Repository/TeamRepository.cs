@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Team;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -36,9 +37,26 @@ namespace ScoreOracleCSharp.Repository
             return team;
         }
 
-        public async Task<List<Team>> GetAllAsync()
+        public async Task<List<Team>> GetAllAsync(TeamQueryObject query)
         {
-            return await _context.Teams.ToListAsync();
+            var teams = _context.Teams.Include(t => t.Sport).AsQueryable();
+
+            if(!string.IsNullOrWhiteSpace(query.City))
+            {
+                teams = teams.Where(t => t.City.Contains(query.City));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.Name))
+            {
+                teams = teams.Where(t => t.Name.Contains(query.Name));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.SportName))
+            {
+                teams = teams.Where(t => t.Sport != null && t.Sport.Name.Contains(query.SportName));
+            }
+
+            return await teams.ToListAsync();
         }
 
         public async Task<Team?> GetByIdAsync(int id)

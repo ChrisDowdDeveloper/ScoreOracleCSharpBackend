@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using ScoreOracleCSharp.Dtos.Game;
 using ScoreOracleCSharp.Dtos.Group;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -38,10 +41,25 @@ namespace ScoreOracleCSharp.Repository
             return group;
         }
 
-        public async Task<List<Group>> GetAllAsync()
+        public async Task<List<Group>> GetAllAsync(GroupQueryObject query)
         {
-            return await _context.Groups.ToListAsync();
+            var groups = _context.Groups
+                                .Include(g => g.CreatedBy)
+                                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Name))
+            {
+                groups = groups.Where(g => g.Name.Contains(query.Name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                groups = groups.Where(g => g.CreatedBy != null && g.CreatedBy.UserName != null && g.CreatedBy.UserName.Contains(query.UserName));
+            }
+
+            return await groups.ToListAsync();
         }
+
 
         public async Task<Group?> GetByIdAsync(int id)
         {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
 
@@ -34,9 +36,24 @@ namespace ScoreOracleCSharp.Repository
             return groupMember;
         }
 
-        public async Task<List<GroupMember>> GetAllAsync()
+        public async Task<List<GroupMember>> GetAllAsync(GroupMemberQueryObject query)
         {
-            return await _context.GroupMembers.ToListAsync();
+            var members = _context.GroupMembers
+                                    .Include(gm => gm.Group)
+                                    .Include(gm => gm.User)
+                                    .AsQueryable();
+
+            if(!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                members = members.Where(gm => gm.Group != null && gm.Group.Name.Contains(query.UserName));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.UserName))
+            {
+                members = members.Where(gm => gm.User != null && gm.User.UserName != null && gm.User.UserName.Contains(query.UserName));
+            }
+
+            return await members.ToListAsync();
         }
 
         public async Task<GroupMember?> GetByIdAsync(int id)

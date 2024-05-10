@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.Injury;
+using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 
@@ -27,9 +28,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of injuries</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll() 
+        public async Task<IActionResult> GetAll(InjuryQueryObject query) 
         {
-            var injuries = await _injuryRepository.GetAllAsync();
+            var injuries = await _injuryRepository.GetAllAsync(query);
         
             return Ok(injuries);
         }
@@ -38,7 +39,7 @@ namespace ScoreOracleCSharp.Controllers
         /// Retrieves an injury in the database.
         /// </summary>
         /// <returns>A specific injury</returns>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var injury = await _injuryRepository.GetByIdAsync(id);
@@ -83,7 +84,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>The updated injury</returns>
         [HttpPatch]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateInjuryDto injuryDto)
         {
             var updatedInjury = await _injuryRepository.UpdateAsync(id, injuryDto);
@@ -99,7 +100,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>No Content</returns>
         [HttpDelete]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             await _injuryRepository.DeleteAsync(id);
