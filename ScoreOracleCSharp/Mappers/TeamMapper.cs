@@ -16,9 +16,14 @@ namespace ScoreOracleCSharp.Mappers
                 Id = teamModel.Id,
                 City = teamModel.City,
                 Name = teamModel.Name,
-                SportId = teamModel.SportId ?? 0,
+                SportId = teamModel.SportId,
                 SportName = teamModel.Sport?.Name ?? "Unknown",
-                LogoURL = teamModel.LogoURL
+                LogoURL = teamModel.LogoURL,
+                HomeGames = teamModel.HomeGames.Select(h => GameMapper.ToGameDto(h)).ToList(),
+                AwayGames = teamModel.AwayGames.Select(a => GameMapper.ToGameDto(a)).ToList(),
+                InjuriesOnTeam = teamModel.InjuriesOnTeam.Select(i => InjuryMapper.ToInjuryDto(i)).ToList(),
+                PlayersOnTeam = teamModel.PlayersOnTeam.Select(p => PlayerMapper.ToPlayerDto(p)).ToList(),
+                TeamPredicted = teamModel.TeamPredicted.Select(p => PredictionMapper.ToPredictionDto(p)).ToList()
             };
         }
 

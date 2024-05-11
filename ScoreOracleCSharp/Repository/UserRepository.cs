@@ -23,12 +23,27 @@ public class UserRepository : IUserRepository
         {
             users = users.Where(u => u.UserName != null && u.UserName.Contains(query.UserName));
         }
-        return await users.ToListAsync();
+        return await users
+                    .Include(rec => rec.ReceivedFriendships)
+                    .Include(req => req.RequestedFriendships)
+                    .Include(g => g.GroupsJoined)
+                    .Include(n => n.Notifications)
+                    .Include(p => p.PredictionsByPlayer)
+                    .Include(us => us.UserScores)
+                    .ToListAsync();
     }
 
     public async Task<User> GetUserByIdAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId) ?? throw new KeyNotFoundException($"No user found with ID {userId}");
+        var user = await _userManager.Users
+            .Where(u => u.Id == userId)
+            .Include(rec => rec.ReceivedFriendships)
+            .Include(req => req.RequestedFriendships)
+            .Include(g => g.GroupsJoined)
+            .Include(n => n.Notifications)
+            .Include(p => p.PredictionsByPlayer)
+            .Include(us => us.UserScores)
+            .FirstOrDefaultAsync() ?? throw new KeyNotFoundException($"No user found with ID {userId}");
         return user;
     }
 

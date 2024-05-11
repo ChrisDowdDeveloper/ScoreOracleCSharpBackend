@@ -28,7 +28,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of games</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(GameQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] GameQueryObject query) 
         {
             var games = await _gameRepository.GetAllAsync(query);
 

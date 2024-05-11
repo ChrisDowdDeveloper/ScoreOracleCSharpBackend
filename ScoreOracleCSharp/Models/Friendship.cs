@@ -1,4 +1,6 @@
-﻿namespace ScoreOracleCSharp.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScoreOracleCSharp.Models
 {
     public enum FriendshipStatus
     {
@@ -7,6 +9,7 @@
         Rejected,
         Blocked
     }
+    [Table("Friendships")]
     public class Friendship
     {
         public int Id { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace ScoreOracleCSharp.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScoreOracleCSharp.Models
 {
     public enum NotificationType
     {
@@ -7,6 +9,7 @@
         FRIEND_RESPONSE,
         PREDICTION_REMINDER
     }
+    [Table("Notifications")]
     public class Notification
     {
         public int Id { get; set; }

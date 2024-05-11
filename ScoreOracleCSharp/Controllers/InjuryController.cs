@@ -28,7 +28,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of injuries</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(InjuryQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] InjuryQueryObject query) 
         {
             var injuries = await _injuryRepository.GetAllAsync(query);
         

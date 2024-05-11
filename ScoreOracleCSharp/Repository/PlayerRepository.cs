@@ -59,12 +59,12 @@ namespace ScoreOracleCSharp.Repository
                 players = players.Where(p => p.Team != null && p.Team.Name.Contains(query.TeamName));
             }
 
-            return await players.ToListAsync();
+            return await players.Include(p => p.PlayerInjury).ToListAsync();
         }
 
         public async Task<Player?> GetByIdAsync(int id)
         {
-            return await _context.Players.FindAsync(id);
+            return await _context.Players.Include(p => p.PlayerInjury).FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public Task<bool> TeamExists(int teamId)

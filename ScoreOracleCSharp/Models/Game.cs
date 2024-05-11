@@ -1,4 +1,6 @@
-﻿namespace ScoreOracleCSharp.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScoreOracleCSharp.Models
 {
     public enum GameStatus
     {
@@ -7,6 +9,7 @@
         COMPLETED,
         POSTPONED
     }
+    [Table("Games")]
     public class Game
     {
         public int Id { get; set; }

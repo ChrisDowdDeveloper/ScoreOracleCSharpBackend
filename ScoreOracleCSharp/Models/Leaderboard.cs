@@ -1,10 +1,13 @@
-﻿namespace ScoreOracleCSharp.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScoreOracleCSharp.Models
 {
     public enum LeaderboardType
     {
         PUBLIC,
         PRIVATE
     }
+    [Table("Leaderboards")]
     public class Leaderboard
     {
         public int Id { get; set; }

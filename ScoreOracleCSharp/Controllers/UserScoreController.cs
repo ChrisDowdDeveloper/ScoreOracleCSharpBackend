@@ -26,7 +26,7 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(UserScoreQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] UserScoreQueryObject query) 
         {
             var score = await _scoreRepository.GetAllAsync(query);
             return Ok(score);

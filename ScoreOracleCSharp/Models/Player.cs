@@ -1,5 +1,8 @@
-﻿namespace ScoreOracleCSharp.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ScoreOracleCSharp.Models
 {
+    [Table("Players")]
     public class Player
     {
         public int Id { get; set; }

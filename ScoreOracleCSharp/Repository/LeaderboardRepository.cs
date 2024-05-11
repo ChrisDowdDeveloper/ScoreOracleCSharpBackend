@@ -54,12 +54,12 @@ namespace ScoreOracleCSharp.Repository
                 leaderboards = leaderboards.Where(l => l.Sport != null && l.Sport.Name.Contains(query.SportName));
             }
 
-            return await leaderboards.ToListAsync();
+            return await leaderboards.Include(l => l.Users).ToListAsync();
         }
 
         public async Task<Leaderboard?> GetByIdAsync(int id)
         {
-            return await _context.Leaderboards.FindAsync(id);
+            return await _context.Leaderboards.Include(l => l.Users).FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<bool> SportExists(int sportId)

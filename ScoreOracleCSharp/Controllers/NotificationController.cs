@@ -30,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of notifications</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(NotificationQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] NotificationQueryObject query) 
         {
             var notifications = await _notificationRepository.GetAllAsync(query);
         

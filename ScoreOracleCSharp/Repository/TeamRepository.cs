@@ -55,13 +55,31 @@ namespace ScoreOracleCSharp.Repository
             {
                 teams = teams.Where(t => t.Sport != null && t.Sport.Name.Contains(query.SportName));
             }
-
-            return await teams.ToListAsync();
+            /*
+                Home Game
+                Away Game
+                Injuries On Team
+                Players On Team
+                Team Predicted
+            */
+            return await teams
+                        .Include(h => h.HomeGames)
+                        .Include(a => a.AwayGames)
+                        .Include(i => i.InjuriesOnTeam)
+                        .Include(p => p.PlayersOnTeam)
+                        .Include(t => t.TeamPredicted)
+                        .ToListAsync();
         }
 
         public async Task<Team?> GetByIdAsync(int id)
         {
-            return await _context.Teams.FindAsync(id);
+            return await _context.Teams
+                                    .Include(h => h.HomeGames)
+                                    .Include(a => a.AwayGames)
+                                    .Include(i => i.InjuriesOnTeam)
+                                    .Include(p => p.PlayersOnTeam)
+                                    .Include(t => t.TeamPredicted)
+                                    .FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<bool> SportExists(int sportId)

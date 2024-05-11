@@ -29,7 +29,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of leaderboards</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(LeaderboardQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] LeaderboardQueryObject query) 
         {
             var leaderboards = await _leaderboardRepository.GetAllAsync(query);
         

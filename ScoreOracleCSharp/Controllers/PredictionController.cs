@@ -30,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of predictions</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(PredictionQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] PredictionQueryObject query) 
         {
             var predictions = await _predictionRepository.GetAllAsync(query);
         

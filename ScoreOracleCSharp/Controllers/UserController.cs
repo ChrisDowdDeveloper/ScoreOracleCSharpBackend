@@ -21,7 +21,7 @@ namespace ScoreOracleCSharp.Controllers
 
         // GET: api/user
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers(UserQueryObject query) 
+        public async Task<IActionResult> GetAllUsers([FromQuery] UserQueryObject query) 
         {
             var users = await _userRepository.GetAllUsersAsync(query);
             var userDtos = users.ConvertAll(user => UserMapper.ToUserDto(user));

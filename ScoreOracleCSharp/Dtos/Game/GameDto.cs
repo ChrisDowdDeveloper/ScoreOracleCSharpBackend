@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ScoreOracleCSharp.Dtos.Prediction;
 using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Dtos.Game
@@ -24,5 +25,6 @@ namespace ScoreOracleCSharp.Dtos.Game
         public string SportName { get; set; } = string.Empty;
 
         public int PredictionCount { get; set; }
+        public List<PredictionDto> Predictions { get; set; }
     }
 }

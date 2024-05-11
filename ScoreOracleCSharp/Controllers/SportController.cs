@@ -51,7 +51,7 @@ namespace ScoreOracleCSharp.Controllers
                 return NotFound();
             }
 
-            return Ok(sport);
+            return Ok(SportMapper.ToSportDto(sport));
         }
 
         /// <summary>

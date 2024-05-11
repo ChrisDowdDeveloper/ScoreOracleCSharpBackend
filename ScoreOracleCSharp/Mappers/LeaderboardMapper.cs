@@ -18,13 +18,14 @@ namespace ScoreOracleCSharp.Mappers
                 Type = leaderboardModel.Type.ToString(),
                 SportId = leaderboardModel.SportId ?? 0,
                 SportName = leaderboardModel.Sport?.Name ?? "Unknown",
-
+                Users = leaderboardModel.Users.Select(u => UserMapper.ToUserDto(u)).ToList(),
                 UserScores = leaderboardModel.ScoreByUser.Select(us => new SimpleUserScore
                 {
                     UserId = us.UserId,
                     Username = us.User?.UserName ?? "Unknown",
                     Score = us.Score
-                }).ToList()
+                }).ToList(),
+                
             };
         }
 

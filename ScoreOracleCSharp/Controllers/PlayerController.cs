@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of players</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(PlayerQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] PlayerQueryObject query) 
         {
             var players = await _playerRepository.GetAllAsync(query);
         

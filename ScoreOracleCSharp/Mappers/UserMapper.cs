@@ -20,7 +20,13 @@ namespace ScoreOracleCSharp.Mappers
                 DateCreated = userModel.DateCreated,
                 FriendshipCount = userModel.ReceivedFriendships.Count + userModel.RequestedFriendships.Count,
                 GroupMembershipCount = userModel.GroupsJoined.Count,
-                NotificationCount = userModel.Notifications.Count(n => !n.IsRead)
+                NotificationCount = userModel.Notifications.Count(n => !n.IsRead),
+                ReceivedFriendships = userModel.ReceivedFriendships.Select(rec => FriendshipMapper.ToFriendshipDto(rec)).ToList(),
+                RequestedFriendships = userModel.RequestedFriendships.Select(req => FriendshipMapper.ToFriendshipDto(req)).ToList(),
+                GroupsJoined = userModel.GroupsJoined.Select(m => GroupMemberMapper.ToGroupMemberDto(m)).ToList(),
+                Notifications = userModel.Notifications.Select(n => NotificationMapper.ToNotificationDto(n)).ToList(),
+                PredictionsByPlayer = userModel.PredictionsByPlayer.Select(p => PredictionMapper.ToPredictionDto(p)).ToList(),
+                UserScores = userModel.UserScores.Select(us => UserScoreMapper.ToUserScoreDto(us)).ToList()
             };
         }
 

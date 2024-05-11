@@ -75,12 +75,12 @@ namespace ScoreOracleCSharp.Repository
                 }
             }
 
-            return await games.ToListAsync();
+            return await games.Include(p => p.GamePrediction).ToListAsync();
         }
 
         public async Task<Game?> GetByIdAsync(int id)
         {
-            return await _context.Games.FindAsync(id);
+            return await _context.Games.Include(p => p.GamePrediction).FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<bool> SportExists(int sportId)

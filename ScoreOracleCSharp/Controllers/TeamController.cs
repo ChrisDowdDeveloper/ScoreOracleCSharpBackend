@@ -28,7 +28,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of teams</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(TeamQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] TeamQueryObject query) 
         {
             var teams = await _teamRepository.GetAllAsync(query);
         
@@ -49,7 +49,7 @@ namespace ScoreOracleCSharp.Controllers
                 return NotFound();
             }
 
-            return Ok(team);
+            return Ok(TeamMapper.ToTeamDto(team));
         }
 
         /// <summary>

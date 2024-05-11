@@ -7,7 +7,7 @@ using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Mappers
 {
-    public class SportMapper
+    public static class SportMapper
     {
         public static SportDto ToSportDto(Sport sportModel)
         {
@@ -17,7 +17,11 @@ namespace ScoreOracleCSharp.Mappers
                 Name = sportModel.Name,
                 League = sportModel.League,
                 LogoURL = sportModel.LogoURL,
-                Abbreviation = sportModel.Abbreviation
+                Abbreviation = sportModel.Abbreviation,
+                Teams = sportModel.Teams.Select(t => TeamMapper.ToTeamDto(t)).ToList(),
+                Games = sportModel.Games.Select(g => GameMapper.ToGameDto(g)).ToList(),
+                PlayersInSport = sportModel.PlayersInSport.Select(p => PlayerMapper.ToPlayerDto(p)).ToList(),
+                LeaderboardsBySport = sportModel.LeaderboardsBySport.Select(l => LeaderboardMapper.ToLeaderboardDto(l)).ToList()
             };
         }
 

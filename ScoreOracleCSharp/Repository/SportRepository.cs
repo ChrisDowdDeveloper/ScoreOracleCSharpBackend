@@ -56,12 +56,22 @@ namespace ScoreOracleCSharp.Repository
                 sports = sports.Where(s => s.Abbreviation.Contains(query.Abbreviation));
             }
 
-            return await sports.ToListAsync();
+            return await sports
+                        .Include(t => t.Teams)
+                        .Include(g => g.Games)
+                        .Include(p => p.PlayersInSport)
+                        .Include(l => l.LeaderboardsBySport)
+                        .ToListAsync();
         }
 
         public async Task<Sport?> GetByIdAsync(int id)
         {
-            return await _context.Sports.FindAsync(id);
+            return await _context.Sports
+                                 .Include(t => t.Teams)
+                                 .Include(g => g.Games)
+                                 .Include(p => p.PlayersInSport)
+                                 .Include(l => l.LeaderboardsBySport)
+                                 .FirstOrDefaultAsync(i => i.Id == id);
         }
 
         public async Task<bool> SportExists(string name, string abbreviation)

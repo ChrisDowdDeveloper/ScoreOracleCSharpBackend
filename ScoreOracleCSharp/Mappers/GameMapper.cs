@@ -28,7 +28,8 @@ namespace ScoreOracleCSharp.Mappers
                 SportId = gameModel.SportId ?? 0,
                 SportName = gameModel.Sport?.Name ?? "Unknown",
 
-                PredictionCount = gameModel.GamePrediction.Count
+                PredictionCount = gameModel.GamePrediction.Count,
+                Predictions = gameModel.GamePrediction.Select(p => PredictionMapper.ToPredictionDto(p)).ToList()
             };
         }
 

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ScoreOracleCSharp.Dtos.User;
+using ScoreOracleCSharp.Models;
 
 namespace ScoreOracleCSharp.Dtos.Leaderboard
 {
@@ -12,6 +14,7 @@ namespace ScoreOracleCSharp.Dtos.Leaderboard
         public string Type { get; set; } = string.Empty;
         public int SportId { get; set; }
         public string SportName { get; set; } = string.Empty;
+        public List<UserDto> Users { get; set; }
         public List<SimpleUserScore> UserScores { get; set; } = new List<SimpleUserScore>();
     }
     public class SimpleUserScore

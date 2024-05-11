@@ -30,7 +30,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of group members</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(GroupMemberQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] GroupMemberQueryObject query) 
         {
             var members = await _memberRepository.GetAllAsync(query);
         

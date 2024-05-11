@@ -19,7 +19,8 @@ namespace ScoreOracleCSharp.Mappers
                 FirstName = playerModel.FirstName,
                 LastName = playerModel.LastName,
                 Position = playerModel.Position,
-                IsInjured = playerModel.PlayerInjury.Any()
+                IsInjured = playerModel.PlayerInjury.Any(),
+                PlayerInjury = playerModel.PlayerInjury.Select(i => InjuryMapper.ToInjuryDto(i)).ToList()
             };
         }
 
