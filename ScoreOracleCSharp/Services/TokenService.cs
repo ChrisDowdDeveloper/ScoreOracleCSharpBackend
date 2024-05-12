@@ -26,7 +26,8 @@ namespace ScoreOracleCSharp.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.GivenName, user.UserName)
+                new Claim(JwtRegisteredClaimNames.GivenName, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
             };
 
             var encryption = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);

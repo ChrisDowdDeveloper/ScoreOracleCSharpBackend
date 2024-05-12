@@ -8,6 +8,7 @@ using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ScoreOracleCSharp.Controllers
@@ -91,7 +92,15 @@ namespace ScoreOracleCSharp.Controllers
         }
         private string GetAuthenticatedUserId()
         {
-            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (userId == null)
+            {
+                throw new InvalidOperationException("User must be authenticated.");
+            }
+            else
+            {
+                return userId;
+            }
         }
     }
 }

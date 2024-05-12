@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -127,7 +128,15 @@ namespace ScoreOracleCSharp.Controllers
         }
         private string GetAuthenticatedUserId()
         {
-            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (userId == null)
+            {
+                throw new InvalidOperationException("User must be authenticated.");
+            }
+            else
+            {
+                return userId;
+            }
         }
     }
 }

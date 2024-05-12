@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Models;
@@ -83,5 +84,4 @@ public class UserRepository : IUserRepository
         var user = await _userManager.FindByEmailAsync(email);
         return user != null;
     }
-
 }

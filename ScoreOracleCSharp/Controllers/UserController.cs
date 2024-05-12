@@ -6,6 +6,7 @@ using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
 using ScoreOracleCSharp.Mappers;
 using ScoreOracleCSharp.Models;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ScoreOracleCSharp.Controllers
@@ -130,6 +131,11 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto userDto)
         {
+            var userId = GetAuthenticatedUserId();
+            if(userId != id)
+            {
+                return BadRequest("You cannot modify another person.");
+            }
             var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
@@ -157,6 +163,11 @@ namespace ScoreOracleCSharp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
+            var userId = GetAuthenticatedUserId();
+            if(userId != id)
+            {
+                return BadRequest("You cannot modify another person.");
+            }
             bool deleted = await _userRepository.DeleteUserAsync(id);
             if (deleted)
             {
@@ -168,10 +179,17 @@ namespace ScoreOracleCSharp.Controllers
             }
         }
 
-        // Helper method to get authenticated user ID
-        private string? GetAuthenticatedUserId()
+        private string GetAuthenticatedUserId()
         {
-            return User.Identity?.Name ?? throw new InvalidOperationException("User must be authenticated.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (userId == null)
+            {
+                throw new InvalidOperationException("User must be authenticated.");
+            }
+            else
+            {
+                return userId;
+            }
         }
     }
 }

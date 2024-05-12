@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ScoreOracleCSharp.Dtos.Group;
 using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
@@ -14,14 +17,18 @@ namespace ScoreOracleCSharp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class GroupController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
         private readonly IGroupRepository _groupRepository;
-        public GroupController(ApplicationDBContext context, IGroupRepository groupRepository)
+        private readonly ILogger<GroupController> _logger;
+
+        public GroupController(ILogger<GroupController> logger, ApplicationDBContext context, IGroupRepository groupRepository)
         {
             _groupRepository = groupRepository;
             _context = context;
+            _logger = logger;
         }
 
         /// <summary>
@@ -29,47 +36,47 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of groups</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] GroupQueryObject query) 
+        public async Task<IActionResult> GetAll([FromQuery] GroupQueryObject query)
         {
             var groups = await _groupRepository.GetAllAsync(query);
-        
             return Ok(groups);
         }
 
         /// <summary>
-        /// Retrieves a group in the database.
+        /// Retrieves a specific group from the database by ID.
         /// </summary>
+        /// <param name="id">The ID of the group to retrieve.</param>
         /// <returns>A specific group</returns>
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var group = await _groupRepository.GetByIdAsync(id);
-
-            if(group == null)
+            if (group == null)
             {
                 return NotFound();
             }
-
             return Ok(group);
         }
 
         /// <summary>
-        /// Creates a group in the database
+        /// Creates a group in the database.
         /// </summary>
+        /// <param name="groupDto">Data transfer object for creating a group.</param>
         /// <returns>The created group</returns>
-        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateGroupDto groupDto)
         {
-            if (!await _groupRepository.UserExists(groupDto.CreatedByUserId))
-            {
-                return BadRequest("Invalid user ID.");
-            }
-
             var userId = GetAuthenticatedUserId();
+            _logger.LogInformation("User ID from token: {UserId}", userId);
+
             if (userId == null)
             {
                 return Unauthorized("You are not authorized to create a group.");
+            }
+
+            if (!await _groupRepository.UserExists(groupDto.CreatedByUserId))
+            {
+                return BadRequest("Invalid user ID.");
             }
 
             var newGroup = GroupMapper.ToGroupFromCreateDTO(groupDto);
@@ -78,20 +85,23 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         /// <summary>
-        /// Updates a friendship in the database
+        /// Updates a group in the database.
         /// </summary>
-        /// <returns>The updated friendship</returns>
-        [HttpPatch]
-        [Route("{id:int}")]
+        /// <param name="id">The ID of the group to update.</param>
+        /// <param name="groupDto">Data transfer object for updating a group.</param>
+        /// <returns>The updated group</returns>
+        [HttpPatch("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateGroupDto groupDto)
         {
+            var userId = GetAuthenticatedUserId();
+            _logger.LogInformation("Attempting to update group with User ID from token: {UserId}", userId);
+
             var group = await _context.Groups.FindAsync(id);
-            if(group == null)
+            if (group == null)
             {
                 return NotFound();
             }
 
-            var userId = GetAuthenticatedUserId();
             if (!await _groupRepository.UserCanModifyGroup(userId, id))
             {
                 return Unauthorized("You do not have permission to update this group.");
@@ -103,8 +113,7 @@ namespace ScoreOracleCSharp.Controllers
             }
 
             var updatedGroup = await _groupRepository.UpdateAsync(id, groupDto);
-
-            if(updatedGroup == null)
+            if (updatedGroup == null)
             {
                 return NotFound("Group cannot be found.");
             }
@@ -113,15 +122,17 @@ namespace ScoreOracleCSharp.Controllers
         }
 
         /// <summary>
-        /// Deletes a friendship in the database
+        /// Deletes a group in the database.
         /// </summary>
-        /// <returns>No Content</returns>
-        [HttpDelete]
-        [Route("{id:int}")]
+        /// <param name="id">The ID of the group to delete.</param>
+        /// <returns>HTTP 204 No Content status code if successful</returns>
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetAuthenticatedUserId();
-            if(!await _groupRepository.UserCanModifyGroup(userId, id))
+            _logger.LogInformation("Attempting to delete group with User ID from token: {UserId}", userId);
+
+            if (!await _groupRepository.UserCanModifyGroup(userId, id))
             {
                 return Unauthorized("You do not have permission to delete this group");
             }
@@ -132,8 +143,15 @@ namespace ScoreOracleCSharp.Controllers
 
         private string GetAuthenticatedUserId()
         {
-            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User must be authenticated.");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (userId == null)
+            {
+                throw new InvalidOperationException("User must be authenticated.");
+            }
+            else
+            {
+                return userId;
+            }
         }
-        
     }
 }

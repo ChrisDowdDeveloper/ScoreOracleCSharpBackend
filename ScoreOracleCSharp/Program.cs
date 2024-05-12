@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -27,7 +29,7 @@ builder.Services.AddSwaggerGen(option =>
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
-        Scheme = "Bearer"
+        Scheme = "bearer"
     });
     option.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -40,12 +42,13 @@ builder.Services.AddSwaggerGen(option =>
                     Id="Bearer"
                 }
             },
-            new string[]{}
+            Array.Empty<string>()
         }
     });
 });
 
-builder.Services.AddControllers().AddNewtonsoftJson(options => {
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+{
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 });
 
@@ -53,9 +56,6 @@ builder.Services.AddDbContext<ApplicationDBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-
-// Register UserManager<User> for your custom user model
-builder.Services.AddScoped<UserManager<User>>();
 
 // Identity services
 builder.Services.AddIdentity<User, IdentityRole>()
@@ -79,6 +79,7 @@ if (string.IsNullOrEmpty(jwtKey))
 {
     throw new InvalidOperationException("JWT Key is not configured properly.");
 }
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -89,10 +90,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            NameClaimType = ClaimTypes.NameIdentifier
         };
     });
 
+// Repository and service registration
 builder.Services.AddScoped<ISportRepository, SportRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IGameRepository, GameRepository>();
@@ -120,6 +123,18 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger("Startup");
+    logger.LogInformation("Executing middleware with User Claims");
+
+    // Log the claims present right after authentication
+    var claims = context.User.Claims.Select(c => $"{c.Type}: {c.Value}").ToList();
+    logger.LogInformation(string.Join(", ", claims));
+
+    await next.Invoke();
+});
 app.UseAuthorization();
 
 app.MapControllers();
