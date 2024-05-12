@@ -89,7 +89,13 @@ namespace ScoreOracleCSharp.Repository
                 }
             }
 
-            return await players.Include(p => p.PlayerInjury).ToListAsync();
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            return await players
+                        .Include(p => p.PlayerInjury)
+                        .Skip(skipNumber)
+                        .Take(query.PageSize)
+                        .ToListAsync();
         }
 
         public async Task<Player?> GetByIdAsync(int id)

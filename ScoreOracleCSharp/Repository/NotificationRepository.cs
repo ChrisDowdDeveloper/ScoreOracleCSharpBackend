@@ -76,7 +76,12 @@ namespace ScoreOracleCSharp.Repository
                 }
             }
 
-            return await notifications.ToListAsync();
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            return await notifications
+                        .Skip(skipNumber)
+                        .Take(query.PageSize)
+                        .ToListAsync();
         }
 
         public async Task<Notification?> GetByIdAsync(int id)

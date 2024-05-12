@@ -86,12 +86,16 @@ namespace ScoreOracleCSharp.Repository
                 }
             }
 
+             var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
             return await teams
                         .Include(h => h.HomeGames)
                         .Include(a => a.AwayGames)
                         .Include(i => i.InjuriesOnTeam)
                         .Include(p => p.PlayersOnTeam)
                         .Include(t => t.TeamPredicted)
+                        .Skip(skipNumber)
+                        .Take(query.PageSize)
                         .ToListAsync();
         }
 

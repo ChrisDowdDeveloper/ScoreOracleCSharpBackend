@@ -36,6 +36,8 @@ public class UserRepository : IUserRepository
             }
         }
 
+        var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
         return await users
                     .Include(rec => rec.ReceivedFriendships)
                     .Include(req => req.RequestedFriendships)
@@ -43,6 +45,8 @@ public class UserRepository : IUserRepository
                     .Include(n => n.Notifications)
                     .Include(p => p.PredictionsByPlayer)
                     .Include(us => us.UserScores)
+                    .Skip(skipNumber)
+                    .Take(query.PageSize)
                     .ToListAsync();
     }
 
