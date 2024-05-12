@@ -10,7 +10,7 @@ namespace ScoreOracleCSharp.Interfaces
 {
     public interface IFriendshipRepository
     {
-        Task<List<Friendship>> GetAllAsync();
+        Task<List<Friendship>> GetAllAsync(FriendshipQueryObject query);
         Task<Friendship?> GetByIdAsync(int id);
         Task<Friendship> CreateAsync(Friendship friendshipModel);
         Task<Friendship?> UpdateAsync(int id, UpdateFriendshipDto friendshipDto);

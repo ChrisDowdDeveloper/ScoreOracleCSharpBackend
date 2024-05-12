@@ -38,9 +38,55 @@ namespace ScoreOracleCSharp.Repository
             return friendship;
         }
 
-        public async Task<List<Friendship>> GetAllAsync()
+        public async Task<List<Friendship>> GetAllAsync(FriendshipQueryObject query)
         {
-            return await _context.Friendships.ToListAsync();
+            // Receiver Name & Status
+            var friendships = _context.Friendships.Include(f => f.Receiver).AsQueryable();
+            if(!string.IsNullOrWhiteSpace(query.ReceiverName))
+            {
+                friendships = friendships.Where(f => f.Receiver != null && (f.Receiver.FirstName + " " + f.Receiver.LastName).ToLower().Contains(query.ReceiverName));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.Status))
+            {
+                var typeStr = query.Status.ToUpper();
+                if(Enum.TryParse<FriendshipStatus>(query.Status, out var statusEnum))
+                {
+                    friendships = friendships.Where(f => f.Status == statusEnum);
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid friendship type specified");
+                }
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("ReceiverName",  StringComparison.OrdinalIgnoreCase))
+                {
+                    friendships = query.IsDescending 
+                            ? friendships.OrderByDescending(f => 
+                                f.Receiver != null ? (f.Receiver.FirstName + " " + f.Receiver.LastName).ToLower() : "") 
+                            : friendships.OrderBy(f => 
+                                f.Receiver != null ? (f.Receiver.FirstName + " " + f.Receiver.LastName).ToLower() : "");
+                }
+
+                if(query.SortBy.Equals("Status", StringComparison.OrdinalIgnoreCase))
+                {
+                    friendships = query.IsDescending 
+                            ? friendships.OrderByDescending(f => 
+                                f.Status) 
+                            : friendships.OrderBy(f => 
+                                f.Status);
+                }
+            }
+
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            return await friendships
+                        .Skip(skipNumber)
+                        .Take(query.PageSize)
+                        .ToListAsync();
         }
 
         public async Task<Friendship?> GetByIdAsync(int id)

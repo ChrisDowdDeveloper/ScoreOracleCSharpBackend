@@ -34,9 +34,9 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of friendships</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(FriendshipQueryObject query)
         {
-            var friendships = await _friendshipRepository.GetAllAsync();
+            var friendships = await _friendshipRepository.GetAllAsync(query);
 
             return Ok(friendships);
         }
