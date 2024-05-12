@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 public class UserRepository : IUserRepository
 {
     private readonly UserManager<User> _userManager;
-
     public UserRepository(UserManager<User> userManager)
     {
         _userManager = userManager;
@@ -64,18 +63,6 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User> CreateUserAsync(User user, string password)
-    {
-        var result = await _userManager.CreateAsync(user, password);
-        if (result.Succeeded) return user;
-        throw new InvalidOperationException("Failed to create user");
-    }
-
-    public async Task<bool> CheckPasswordAsync(User user, string password)
-    {
-        return await _userManager.CheckPasswordAsync(user, password);
-    }
-
     public async Task<User> UpdateUserAsync(User user)
     {
         var result = await _userManager.UpdateAsync(user);
@@ -97,9 +84,4 @@ public class UserRepository : IUserRepository
         return user != null;
     }
 
-    public async Task<User> GetUserByEmailAsync(string email)
-    {
-        var user = await _userManager.FindByEmailAsync(email) ?? throw new KeyNotFoundException($"No user found with email {email}");
-        return user;
-    }
 }

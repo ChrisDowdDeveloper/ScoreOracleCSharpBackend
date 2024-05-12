@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.User;
 using ScoreOracleCSharp.Helpers;
 using ScoreOracleCSharp.Interfaces;
@@ -13,10 +15,16 @@ namespace ScoreOracleCSharp.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly ITokenService _tokenService;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
 
-        public UserController(IUserRepository userRepository)
+        public UserController(IUserRepository userRepository, ITokenService tokenService, UserManager<User> userManager, SignInManager<User> signInManager)
         {
             _userRepository = userRepository;
+            _tokenService = tokenService;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         // GET: api/user
@@ -44,15 +52,49 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser([FromBody] CreateUserRequestDto createUserDto)
         {
-            var user = UserMapper.ToUserFromCreateDTO(createUserDto);
             try
             {
-                var createdUser = await _userRepository.CreateUserAsync(user, createUserDto.Password);
-                return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, UserMapper.ToUserDto(createdUser));
+                if(!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var user = new User
+                {
+                    UserName = createUserDto.UserName,
+                    Email = createUserDto.Email
+                };
+
+                var createdUser = await _userManager.CreateAsync(user, createUserDto.Password);
+
+                if(createdUser.Succeeded)
+                {
+                    var roleResult = await _userManager.AddToRoleAsync(user, "User");
+                    if(roleResult.Succeeded)
+                    {
+                        return Ok(
+                            new NewUserDto
+                            {
+                                UserName = user.UserName,
+                                Email = user.Email,
+                                Token = _tokenService.CreateToken(user)
+                            }
+                        );
+                    }
+                    else
+                    {
+                        return StatusCode(500, roleResult.Errors);
+                    }
+                }
+                else
+                {
+                    return StatusCode(500, createdUser.Errors);
+                }
+
             }
-            catch (System.Exception ex)
+            catch (Exception e)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, e);
             }
         }
 
@@ -60,21 +102,28 @@ namespace ScoreOracleCSharp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> LoginUser([FromBody] LoginUserDto loginUserDto)
         {
-            var user = await _userRepository.GetUserByEmailAsync(loginUserDto.Email);
-            if(user == null)
+            if(!ModelState.IsValid)
             {
-                return BadRequest("Invalid email or password");
+                return BadRequest(ModelState);
             }
-            var passwordValid = await _userRepository.CheckPasswordAsync(user, loginUserDto.Password);
-            if(passwordValid)
-            {
-                var userDto = UserMapper.ToUserDto(user);
-                return Ok(userDto);
-            }
-            else
-            {
-                return BadRequest("Invalid email or password");
-            }
+
+            var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginUserDto.Email.ToLower());
+
+            if(user == null) return Unauthorized("Invalid email");
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginUserDto.Password, false);
+
+            if(!result.Succeeded) return Unauthorized("Email or password is incorrect");
+
+            return Ok(
+                new NewUserDto
+                {
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Token = _tokenService.CreateToken(user)
+                }
+            );
+
         }
 
         // PATCH: api/user/{id}
