@@ -11,5 +11,7 @@ namespace ScoreOracleCSharp.Helpers
         public DateOnly? GameDate { get; set; }
         public string? SportName { get; set; }
         public string? GameStatus { get; set; }
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }

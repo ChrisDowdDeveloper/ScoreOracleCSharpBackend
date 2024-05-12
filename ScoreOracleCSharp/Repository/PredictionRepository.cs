@@ -45,10 +45,24 @@ namespace ScoreOracleCSharp.Repository
         public async Task<List<Prediction>> GetAllAsync(PredictionQueryObject query)
         {
             var predictions = _context.Predictions.Include(p => p.User).AsQueryable();
+
             if(!string.IsNullOrWhiteSpace(query.UserName))
             {
                 predictions = predictions.Where(p => p.User != null && p.User.UserName != null && p.User.UserName.Contains(query.UserName));
             }
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("UserName", StringComparison.OrdinalIgnoreCase))
+                {
+                    predictions = query.IsDescending 
+                            ? predictions.OrderByDescending(p => 
+                                p.User != null ? p.User.UserName : "") 
+                            : predictions.OrderBy(p => 
+                                p.User != null ? p.User.UserName : "");
+                }
+            }
+
             return await predictions.ToListAsync();
         }
 

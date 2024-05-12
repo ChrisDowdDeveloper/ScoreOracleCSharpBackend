@@ -75,6 +75,38 @@ namespace ScoreOracleCSharp.Repository
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (!string.IsNullOrWhiteSpace(query.SortBy))
+                {
+                    if (query.SortBy.Equals("TeamName", StringComparison.OrdinalIgnoreCase))
+                    {
+                        games = query.IsDescending 
+                            ? games.OrderByDescending(g =>
+                                (g.HomeTeam != null ? g.HomeTeam.Name : "") + 
+                                (g.AwayTeam != null ? g.AwayTeam.Name : ""))
+                            : games.OrderBy(g =>
+                                (g.HomeTeam != null ? g.HomeTeam.Name : "") +
+                                (g.AwayTeam != null ? g.AwayTeam.Name : ""));
+                    }
+                }
+                if (query.SortBy.Equals("SportName", StringComparison.OrdinalIgnoreCase))
+                {
+                    games = query.IsDescending 
+                        ? games.OrderByDescending(g => 
+                            g.Sport != null ? g.Sport.Name : "") 
+                        : games.OrderBy(g => g.Sport != null ? g.Sport.Name : "");
+                }
+                if (query.SortBy.Equals("GameDate", StringComparison.OrdinalIgnoreCase))
+                {
+                    games = query.IsDescending ? games.OrderByDescending(g => g.GameDate) : games.OrderBy(g => g.GameDate);
+                }
+                if (query.SortBy.Equals("GameStatus", StringComparison.OrdinalIgnoreCase))
+                {
+                    games = query.IsDescending ? games.OrderByDescending(g => g.GameStatus) : games.OrderBy(g => g.GameStatus);
+                }
+            }
+
             return await games.Include(p => p.GamePrediction).ToListAsync();
         }
 

@@ -23,6 +23,19 @@ public class UserRepository : IUserRepository
         {
             users = users.Where(u => u.UserName != null && u.UserName.Contains(query.UserName));
         }
+
+        if(!string.IsNullOrWhiteSpace(query.SortBy))
+        {
+            if(query.SortBy.Equals("UserName", StringComparison.OrdinalIgnoreCase))
+            {
+                users = query.IsDescending 
+                    ? users.OrderByDescending(u => 
+                        u.UserName) 
+                    : users.OrderBy(u => 
+                        u.UserName);
+            }
+        }
+
         return await users
                     .Include(rec => rec.ReceivedFriendships)
                     .Include(req => req.RequestedFriendships)

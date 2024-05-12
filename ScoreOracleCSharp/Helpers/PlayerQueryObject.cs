@@ -10,5 +10,7 @@ namespace ScoreOracleCSharp.Helpers
         public string? TeamName { get; set; }
         public string? PlayerName { get; set; }
         public string? Position { get; set; }
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }

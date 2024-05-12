@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using ScoreOracleCSharp.Dtos.UserScore;
@@ -43,6 +44,18 @@ namespace ScoreOracleCSharp.Repository
             if(!string.IsNullOrWhiteSpace(query.UserName))
             {
                 userScore = userScore.Where(us => us.User != null && us.User.UserName != null && us.User.UserName.Contains(query.UserName));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("UserName", StringComparison.OrdinalIgnoreCase))
+                {
+                    userScore = query.IsDescending 
+                            ? userScore.OrderByDescending(us => 
+                                us.User != null ? us.User.UserName : "") 
+                            : userScore.OrderBy(us => 
+                                us.User != null ? us.User.UserName : "");
+                }
             }
 
             return await userScore.ToListAsync();

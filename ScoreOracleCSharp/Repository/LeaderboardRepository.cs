@@ -54,6 +54,27 @@ namespace ScoreOracleCSharp.Repository
                 leaderboards = leaderboards.Where(l => l.Sport != null && l.Sport.Name.Contains(query.SportName));
             }
 
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    leaderboards = query.IsDescending 
+                            ? leaderboards.OrderByDescending(l => 
+                                l.Name) 
+                            : leaderboards.OrderBy(l => 
+                                l.Name);
+                }
+
+                if (query.SortBy.Equals("SportName"))
+                {
+                    leaderboards = query.IsDescending 
+                            ? leaderboards.OrderByDescending(l => 
+                                l.Sport != null ? l.Sport.Name : "") 
+                            : leaderboards.OrderBy(l => 
+                                l.Sport != null ? l.Sport.Name : "");
+                }
+            }
+
             return await leaderboards.Include(l => l.Users).ToListAsync();
         }
 

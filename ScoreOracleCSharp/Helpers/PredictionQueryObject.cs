@@ -8,5 +8,7 @@ namespace ScoreOracleCSharp.Helpers
     public class PredictionQueryObject
     {
         public string? UserName { get; set; }
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }

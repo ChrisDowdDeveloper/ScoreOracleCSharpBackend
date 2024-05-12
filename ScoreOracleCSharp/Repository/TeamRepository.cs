@@ -55,13 +55,37 @@ namespace ScoreOracleCSharp.Repository
             {
                 teams = teams.Where(t => t.Sport != null && t.Sport.Name.Contains(query.SportName));
             }
-            /*
-                Home Game
-                Away Game
-                Injuries On Team
-                Players On Team
-                Team Predicted
-            */
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("City", StringComparison.OrdinalIgnoreCase))
+                {
+                    teams = query.IsDescending 
+                        ? teams.OrderByDescending(t => 
+                            t.City) 
+                        : teams.OrderBy(t => 
+                            t.City);
+                }
+
+                if(query.SortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    teams = query.IsDescending 
+                        ? teams.OrderByDescending(t => 
+                            t.Name) 
+                        : teams.OrderBy(t => 
+                            t.Name);
+                }
+
+                if(query.SortBy.Equals("SportName", StringComparison.OrdinalIgnoreCase))
+                {
+                    teams = query.IsDescending 
+                        ? teams.OrderByDescending(t => 
+                            t.Sport != null ? t.Sport.Name : "") 
+                        : teams.OrderBy(t => 
+                            t.Sport != null ? t.Sport.Name : "");
+                }
+            }
+
             return await teams
                         .Include(h => h.HomeGames)
                         .Include(a => a.AwayGames)

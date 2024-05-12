@@ -10,5 +10,7 @@ namespace ScoreOracleCSharp.Helpers
         public string? City { get; set; }
         public string? Name { get; set; }
         public string? SportName { get; set; }
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }

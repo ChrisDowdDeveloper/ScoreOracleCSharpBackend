@@ -10,5 +10,7 @@ namespace ScoreOracleCSharp.Helpers
         public string? UserName { get; set; }
         public string? Type { get; set; }
         public bool IsRead { get; set; }
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }

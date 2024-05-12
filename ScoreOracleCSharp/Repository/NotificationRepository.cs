@@ -40,12 +40,12 @@ namespace ScoreOracleCSharp.Repository
         public async Task<List<Notification>> GetAllAsync(NotificationQueryObject query)
         {
             var notifications = _context.Notifications.Include(n => n.User).AsQueryable();
-            // Username
+
             if(!string.IsNullOrWhiteSpace(query.UserName))
             {
                 notifications = notifications.Where(n => n.User != null && n.User.UserName != null && n.User.UserName.Contains(query.UserName));
             }
-            // Type
+
             if (!string.IsNullOrWhiteSpace(query.Type))
             {
                 var typeStr = query.Type.ToUpper();
@@ -58,10 +58,22 @@ namespace ScoreOracleCSharp.Repository
                     throw new ArgumentException("Invalid notification type specified");
                 }
             }
-            // IsRead
+
             if(query.IsRead)
             {
                 notifications = notifications.Where(n => n.IsRead == query.IsRead);
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("UserName", StringComparison.OrdinalIgnoreCase))
+                {
+                    notifications = query.IsDescending 
+                            ? notifications.OrderByDescending(n => 
+                                n.User != null ? n.User.UserName : "") 
+                            : notifications.OrderBy(n => 
+                                n.User != null ? n.User.UserName : "");
+                }
             }
 
             return await notifications.ToListAsync();

@@ -56,6 +56,36 @@ namespace ScoreOracleCSharp.Repository
                 sports = sports.Where(s => s.Abbreviation.Contains(query.Abbreviation));
             }
 
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    sports = query.IsDescending 
+                        ? sports.OrderByDescending(s => 
+                            s.Name) 
+                        : sports.OrderBy(s => 
+                            s.Name);
+                }
+
+                if(query.SortBy.Equals("League", StringComparison.OrdinalIgnoreCase))
+                {
+                    sports = query.IsDescending 
+                        ? sports.OrderByDescending(s => 
+                            s.League) 
+                        : sports.OrderBy(s => 
+                            s.League);
+                }
+
+                if(query.SortBy.Equals("Abbreviation", StringComparison.OrdinalIgnoreCase))
+                {
+                    sports = query.IsDescending 
+                        ? sports.OrderByDescending(s => 
+                            s.Abbreviation) 
+                        : sports.OrderBy(s => 
+                            s.Abbreviation);
+                }
+            }
+
             return await sports
                         .Include(t => t.Teams)
                         .Include(g => g.Games)

@@ -43,14 +43,34 @@ namespace ScoreOracleCSharp.Repository
                                     .Include(gm => gm.User)
                                     .AsQueryable();
 
-            if(!string.IsNullOrWhiteSpace(query.UserName))
+            if(!string.IsNullOrWhiteSpace(query.GroupName))
             {
-                members = members.Where(gm => gm.Group != null && gm.Group.Name.Contains(query.UserName));
+                members = members.Where(gm => gm.Group != null && gm.Group.Name.Contains(query.GroupName));
             }
 
             if(!string.IsNullOrWhiteSpace(query.UserName))
             {
                 members = members.Where(gm => gm.User != null && gm.User.UserName != null && gm.User.UserName.Contains(query.UserName));
+            }
+
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("UserName", StringComparison.OrdinalIgnoreCase))
+                {
+                    members = query.IsDescending 
+                        ? members.OrderByDescending(m => 
+                            m.User != null ?  m.User.UserName : "") 
+                        : members.OrderBy(m => 
+                            m.User != null ?  m.User.UserName : "");
+                }
+                if(query.SortBy.Equals("GroupName", StringComparison.OrdinalIgnoreCase))
+                {
+                    members = query.IsDescending 
+                            ? members.OrderByDescending(m => 
+                                m.Group != null ? m.Group.Name : "")
+                            : members.OrderBy(m => 
+                                m.Group != null ? m.Group.Name : "");
+                }
             }
 
             return await members.ToListAsync();

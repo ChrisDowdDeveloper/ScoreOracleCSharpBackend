@@ -59,6 +59,36 @@ namespace ScoreOracleCSharp.Repository
                 players = players.Where(p => p.Team != null && p.Team.Name.Contains(query.TeamName));
             }
 
+            if(!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if(query.SortBy.Equals("PlayerName", StringComparison.OrdinalIgnoreCase))
+                {
+                    players = query.IsDescending 
+                        ? players.OrderByDescending(p => 
+                            (p.FirstName ?? "") + " " + (p.LastName ?? "").ToLower()) 
+                        : players.OrderBy(p => 
+                            (p.FirstName ?? "") + " " + (p.LastName ?? "").ToLower());  
+                }
+
+                if(query.SortBy.Equals("Position", StringComparison.OrdinalIgnoreCase))
+                {
+                    players = query.IsDescending 
+                        ? players.OrderByDescending(p => 
+                            p.Position) 
+                        : players.OrderBy(p => 
+                            p.Position);
+                }
+
+                if(query.SortBy.Equals("TeamName", StringComparison.OrdinalIgnoreCase))
+                {
+                    players = query.IsDescending 
+                        ? players.OrderByDescending(p => 
+                            p.Team != null ? p.Team.Name : "") 
+                        : players.OrderBy(p => 
+                            p.Team != null ? p.Team.Name : "");
+                }
+            }
+
             return await players.Include(p => p.PlayerInjury).ToListAsync();
         }
 

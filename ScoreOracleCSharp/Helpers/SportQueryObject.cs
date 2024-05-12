@@ -10,5 +10,7 @@ namespace ScoreOracleCSharp.Helpers
         public string? Name { get; set; } = null;
         public string? Abbreviation { get; set; } = null;
         public string? League { get; set; } = null;
+        public string? SortBy { get; set; }
+        public bool IsDescending { get; set; }
     }
 }
