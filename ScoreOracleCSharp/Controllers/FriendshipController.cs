@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
@@ -18,6 +20,7 @@ namespace ScoreOracleCSharp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class FriendshipController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
@@ -34,7 +37,7 @@ namespace ScoreOracleCSharp.Controllers
         /// </summary>
         /// <returns>A list of friendships</returns>
         [HttpGet]
-        public async Task<IActionResult> GetAll(FriendshipQueryObject query)
+        public async Task<IActionResult> GetAll([FromQuery] FriendshipQueryObject query)
         {
             var friendships = await _friendshipRepository.GetAllAsync(query);
 
