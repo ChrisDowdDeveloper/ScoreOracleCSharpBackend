@@ -39,7 +39,6 @@ namespace ScoreOracleCSharp.Mappers
                 FirstName = userDto.FirstName,
                 LastName = userDto.LastName,
                 DateCreated = DateTime.UtcNow,
-                ProfilePictureUrl = userDto.ProfilePictureUrl
             };
         }
     }

@@ -15,7 +15,6 @@ namespace ScoreOracleCSharp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
@@ -33,6 +32,7 @@ namespace ScoreOracleCSharp.Controllers
 
         // GET: api/user
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetAllUsers([FromQuery] UserQueryObject query) 
         {
             var users = await _userRepository.GetAllUsersAsync(query);
@@ -42,6 +42,7 @@ namespace ScoreOracleCSharp.Controllers
 
         // GET: api/user/{id}
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetUserById(string id)
         {
             var user = await _userRepository.GetUserByIdAsync(id);
@@ -132,6 +133,7 @@ namespace ScoreOracleCSharp.Controllers
 
         // PATCH: api/user/{id}
         [HttpPatch("{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto userDto)
         {
             var userId = GetAuthenticatedUserId();
@@ -164,6 +166,7 @@ namespace ScoreOracleCSharp.Controllers
 
         // DELETE: api/user/{id}
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteUser(string id)
         {
             var userId = GetAuthenticatedUserId();
