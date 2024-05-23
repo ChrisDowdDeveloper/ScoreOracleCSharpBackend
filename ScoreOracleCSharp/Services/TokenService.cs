@@ -13,14 +13,15 @@ namespace ScoreOracleCSharp.Services
 {
     public class TokenService : ITokenService
     {
-
         private readonly IConfiguration _config;
         private readonly SymmetricSecurityKey _key;
+
         public TokenService(IConfiguration config)
         {
             _config = config;
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
         }
+
         public string CreateToken(User user)
         {
             var claims = new List<Claim>
@@ -42,7 +43,6 @@ namespace ScoreOracleCSharp.Services
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);

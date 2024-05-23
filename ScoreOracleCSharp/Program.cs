@@ -123,6 +123,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.UseAuthorization();
+
 app.Use(async (context, next) =>
 {
     var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
@@ -135,7 +137,6 @@ app.Use(async (context, next) =>
 
     await next.Invoke();
 });
-app.UseAuthorization();
 
 app.MapControllers();
 
