@@ -12,8 +12,8 @@ using ScoreOracleCSharp;
 namespace ScoreOracleCSharp.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20240512021622_Identity")]
-    partial class Identity
+    [Migration("20240524005449_SeedData")]
+    partial class SeedData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,6 +50,20 @@ namespace ScoreOracleCSharp.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "1160d4c8-58d0-411f-920a-95ab200958dc",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "41f3c9d1-20b0-48f4-9296-92dba3a1aedc",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

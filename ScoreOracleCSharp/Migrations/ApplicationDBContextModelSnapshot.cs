@@ -51,13 +51,13 @@ namespace ScoreOracleCSharp.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "ff305045-4ccb-47e5-bfd5-d11296ca2a26",
+                            Id = "1160d4c8-58d0-411f-920a-95ab200958dc",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = "b895da14-5768-4909-81b5-eb18d41a63b8",
+                            Id = "41f3c9d1-20b0-48f4-9296-92dba3a1aedc",
                             Name = "User",
                             NormalizedName = "USER"
                         });

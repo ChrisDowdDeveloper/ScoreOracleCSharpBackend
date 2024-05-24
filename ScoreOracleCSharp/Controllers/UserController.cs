@@ -59,7 +59,7 @@ namespace ScoreOracleCSharp.Controllers
         {
             try
             {
-                if(!ModelState.IsValid)
+                if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
@@ -72,17 +72,17 @@ namespace ScoreOracleCSharp.Controllers
 
                 var createdUser = await _userManager.CreateAsync(user, createUserDto.Password);
 
-                if(createdUser.Succeeded)
+                if (createdUser.Succeeded)
                 {
                     var roleResult = await _userManager.AddToRoleAsync(user, "User");
-                    if(roleResult.Succeeded)
+                    if (roleResult.Succeeded)
                     {
                         return Ok(
                             new NewUserDto
                             {
                                 UserName = user.UserName,
                                 Email = user.Email,
-                                Token = _tokenService.CreateToken(user)
+                                Token = await _tokenService.CreateToken(user)
                             }
                         );
                     }
@@ -95,7 +95,6 @@ namespace ScoreOracleCSharp.Controllers
                 {
                     return StatusCode(500, createdUser.Errors);
                 }
-
             }
             catch (Exception e)
             {
@@ -103,32 +102,30 @@ namespace ScoreOracleCSharp.Controllers
             }
         }
 
+
         // POST: api/user/login
         [HttpPost("login")]
         public async Task<IActionResult> LoginUser([FromBody] LoginUserDto loginUserDto)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             var user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginUserDto.Email.ToLower());
 
-            if(user == null) return Unauthorized("Invalid email");
+            if (user == null) return Unauthorized("Invalid email");
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginUserDto.Password, false);
 
-            if(!result.Succeeded) return Unauthorized("Email or password is incorrect");
+            if (!result.Succeeded) return Unauthorized("Email or password is incorrect");
 
-            return Ok(
-                new NewUserDto
-                {
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    Token = _tokenService.CreateToken(user)
-                }
-            );
-
+            return Ok(new
+            {
+                UserName = user.UserName,
+                Email = user.Email,
+                Token = await _tokenService.CreateToken(user)
+            });
         }
 
         // PATCH: api/user/{id}
