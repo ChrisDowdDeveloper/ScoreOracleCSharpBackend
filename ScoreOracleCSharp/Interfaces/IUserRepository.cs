@@ -14,5 +14,6 @@ namespace ScoreOracleCSharp.Interfaces
         Task<User> UpdateUserAsync(User user);
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> UserExistsByEmailAsync(string email);
+        Task<User> GetUserByEmailAsync(string email);
     }
 }

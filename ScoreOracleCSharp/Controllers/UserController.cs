@@ -30,6 +30,19 @@ namespace ScoreOracleCSharp.Controllers
             _signInManager = signInManager;
         }
 
+        // GET: api/User/email/{email}
+        [HttpGet("email/{email}")]
+        public async Task<IActionResult> GetUserByEmail(string email)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(email);
+            if(user == null) 
+            {
+                return NotFound();
+            }
+            
+            return Ok(user);
+        }
+
         // GET: api/user
         [HttpGet]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]

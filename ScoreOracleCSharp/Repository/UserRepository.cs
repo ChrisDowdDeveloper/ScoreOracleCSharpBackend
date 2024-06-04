@@ -84,4 +84,10 @@ public class UserRepository : IUserRepository
         var user = await _userManager.FindByEmailAsync(email);
         return user != null;
     }
+
+    public async Task<User> GetUserByEmailAsync(string email)
+    {
+        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new KeyNotFoundException($"No user found with email: {email}");
+        return user; 
+    }
 }
